@@ -1,0 +1,40 @@
+---
+title: "Using OPM"
+author: "George Williams"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Using OPM}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+[OPM](http://opm-project.org/) (The Open Porous Media initiative) is a group developing a set of open source tools that allow the scale-up and modeling of fluid flow in subsurface reservoirs.  The tools being developed use the industry standard Eclipse data format for input and output.  OPM is sponsered by a number of Norwegian organizations, including IRIS, Sintef and Statoil.
+
+This vignette will eventually document a workflow for using the OPM tools, along with tools developed in R, to model a reservoir.  In the mean time, it will be a random compilation of snippets documenting the planned work flow, planned tools and notes to self.
+
+## The Vision
+
+Modifying reservoir models so that they are capable of matching observed data (history matching) and making reasonable predictions has been a very time consuming and arduous task, with often somewhat disappointing results.  In recent years there have been many attempts to develop computer assisted methods to both improve the results and to decrease the time and effort necessary to develop models.  These methods have had mixed results, and have often been proprietary.
+
+This module, along with other associated modules, is an attempt to develop a workflow that combines the use of the OPM tools with tools already existing in R. Particular effort is made to incorporate the excellent set of tools developed by the [DICE](http://dice.emse.fr/) and [ReDICE](http://www.redice-project.org/) consortia to improve complex computer models.
+
+## First Things First:  Run a Simple Model
+
+Obviously, the OPM tools must be installed.  Detailed instructions are available at the [OPM](http://opm-project.org/) website.  The website explains how to install 'stable' binary versions of the tools.  It also explains how to download, build and install the sources from github. As the tools are currently in a very rapid state of development, it may be desirable to downlaod and build the latest versions if functionality that you need has been recently added. 
+
+Three functions are needed to run a very simple model:
+
+1. ***runflow*** allows you to run the simulator
+2. ***flow2csv*** converts Eclipse style output to a csv file
+3. ***plotflow*** plots the simulator output data from the csv file
+
+Here is an example running the [SPE1](http://www.ipt.ntnu.no/~kleppe/pub/SPE-COMPARATIVE/papers/first.pdf) test deck in the working directory:
+
+```{R}
+library(runOPM)
+runflow("SPE1.DATA")
+rslts <- eclsum("./SPE1")
+plotflow(rslts)
+```
+
