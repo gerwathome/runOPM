@@ -4,17 +4,15 @@
 \alias{eclsum}
 \title{Eclipse style summary file to csv}
 \usage{
-eclsum(sumdir = ".", outdir = NULL, projdir = NULL)
+eclsum(casename = "^.+", basedir = ".")
 }
 \arguments{
-\item{outdir}{The  path to where the csv file with the summary data should be written, assumed to be the same as the indir.}
+\item{casename}{The deck basename of an Eclipse style simulation summary output.  A perl style regular expression may be used to find multiple summary files.  Default behavior to to search recursively in the basedir to find a list of summary files.}
 
-\item{projdir}{The  path to where the csv file with summary data for (possibly) multiple wells should be written, assumed to be the same as the indir.}
-
-\item{indir}{The path to an Eclipse style simulation summary output}
+\item{basedir}{The path to the base directory of a simulation project.  The default is the current directory.}
 }
 \value{
-The function writes out a csv file, and returns a dataframe with summary data.
+The function writes out a csv file for each input summary file.  It also appends the new summary data to a csv file with the combined results of all previous runs, and returns a dataframe with the combined summary data.  When the casename duplicates a casename from a previous combined results, the new case is substituted for the old case.
 }
 \description{
 This function converts Eclipse style xy type output to a csv file for later use.

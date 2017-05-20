@@ -4,13 +4,13 @@
 \alias{runflow}
 \title{Run an Open Porous Media reservoir simulation}
 \usage{
-runflow(deckname, outdir = ".", sim_exec = "flow", restart = FALSE,
-  sim_version = "stable", queue = "background")
+runflow(deckname, basedir = ".", sim_exec = "flow", restart = FALSE,
+  sim_version = "stable", queue = "background", wait = FALSE)
 }
 \arguments{
 \item{deckname}{The name and full path to an Eclipse style simulation input deck}
 
-\item{outdir}{The base directory where the ouput should be written, assumed to be the current directory.}
+\item{basedir}{The base directory of a simulation project, assumed to be the current directory.  If a project directory structure does not exist, one will be created.}
 
 \item{sim_exec}{one of ("flow", "flow_mpi", "flow_polymer", "flow_sequential", "flow_solvent")}
 
@@ -19,9 +19,11 @@ runflow(deckname, outdir = ".", sim_exec = "flow", restart = FALSE,
 \item{sim_version}{one of c("stable", "latest")}
 
 \item{queue}{one of c("background", "queue_name", "AWS").  Currently only "background" is functional.}
+
+\item{wait}{A logical indicating whether to wait for the model to finish before proceeding.  The default is FALSE, to run models asynchronously.}
 }
 \value{
-The function uses system2 to execute the simulation run.  Standard error and standard out are redirected to a file.  A non-zero return indicates an error. The function's purpose is the side effect of submitting a job asynchronously.
+The function uses system2 to execute the simulation run.  Standard error and standard out are redirected to a file.  A non-zero return indicates an error. The function's purpose is the side effect of submitting a job to run somewhere.
 }
 \description{
 This function deals with the details of running a reservoir simulation model.  One may specify the model deck, the output location, the executable type and version, and the computing resources used to run the job.
