@@ -12,11 +12,11 @@ vignette: >
 
 [OPM](http://opm-project.org/) (The Open Porous Media initiative) is a group developing a set of open source tools that allow the scale-up and modeling of fluid flow in subsurface reservoirs.  The tools being developed use the industry standard Eclipse data format for input and output.  OPM is sponsered by a number of Norwegian organizations, including IRIS, Sintef and Statoil.
 
-This vignette will eventually document a workflow for using the OPM tools, along with tools developed in R, to model a reservoir.  In the mean time, it will be a random compilation of snippets documenting the planned work flow, planned tools and notes to self.
+This vignette will eventually document a workflow for using the OPM tools, along with tools developed in R, to model a reservoir.  In the mean time, it will be a random compilation of snippets documenting tools completed so far, the planned work flow, planned tools and notes to self.
 
 ## The Vision
 
-Modifying reservoir models so that they are capable of matching observed data (history matching) and making reasonable predictions has been a very time consuming and arduous task, with often somewhat disappointing results.  In recent years there have been many attempts to develop computer assisted methods to both improve the results and to decrease the time and effort necessary to develop models.  These methods have had mixed results, and have often been proprietary.
+Modifying reservoir models so that they are capable of matching observed data (history matching) and making reasonable predictions has long been a very time consuming and arduous task, with often somewhat disappointing results.  In recent years there have been many attempts to develop computer assisted methods to both improve the results and to decrease the time and effort necessary to develop models.  These methods have had mixed results, and have often been proprietary.
 
 This module, along with other associated modules, is an attempt to develop a workflow that combines the use of the OPM tools with tools already existing in R. Particular effort is made to incorporate the excellent set of tools developed by the [DICE](http://dice.emse.fr/) and [ReDICE](http://www.redice-project.org/) consortia to improve complex computer models.
 
@@ -32,11 +32,11 @@ In history match or development scenario projects, it is expected that most of t
 
 Three functions are needed to run a very simple model:
 
-1. ***runflow*** allows you to run the simulator, if you have an appropriate eclipse style deck
-2. ***flow2csv*** converts Eclipse style output to a csv file and loads it
-3. ***plotcase*** plots the simulator output data from the csv file
+1. ***runflow*** allows you to run the simulator, if you have an appropriate eclipse style deck.
+2. ***eclsum*** converts Eclipse style summary output to a csv file, and loads it.
+3. ***ploteach*** plots the simulator output data from the csv file.
 
-Here is an example running the [SPE1](http://www.ipt.ntnu.no/~kleppe/pub/SPE-COMPARATIVE/papers/first.pdf) test deck:
+Here is an example running the [SPE1](http://www.ipt.ntnu.no/~kleppe/pub/SPE-COMPARATIVE/papers/first.pdf) test deck from the first SPE Comparative Solution Project:
 
 ```{r run_simple, cache=FALSE, out.width='30%', out.height='30%'}
 library(runOPM)

@@ -12,7 +12,7 @@
 
 <meta name="author" content="George Williams" />
 
-<meta name="date" content="2017-05-20" />
+<meta name="date" content="2017-05-21" />
 
 <title>Using OPM</title>
 
@@ -70,15 +70,15 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 <h1 class="title toc-ignore">Using OPM</h1>
 <h4 class="author"><em>George Williams</em></h4>
-<h4 class="date"><em>2017-05-20</em></h4>
+<h4 class="date"><em>2017-05-21</em></h4>
 
 
 
 <p><a href="http://opm-project.org/">OPM</a> (The Open Porous Media initiative) is a group developing a set of open source tools that allow the scale-up and modeling of fluid flow in subsurface reservoirs. The tools being developed use the industry standard Eclipse data format for input and output. OPM is sponsered by a number of Norwegian organizations, including IRIS, Sintef and Statoil.</p>
-<p>This vignette will eventually document a workflow for using the OPM tools, along with tools developed in R, to model a reservoir. In the mean time, it will be a random compilation of snippets documenting the planned work flow, planned tools and notes to self.</p>
+<p>This vignette will eventually document a workflow for using the OPM tools, along with tools developed in R, to model a reservoir. In the mean time, it will be a random compilation of snippets documenting tools completed so far, the planned work flow, planned tools and notes to self.</p>
 <div id="the-vision" class="section level2">
 <h2>The Vision</h2>
-<p>Modifying reservoir models so that they are capable of matching observed data (history matching) and making reasonable predictions has been a very time consuming and arduous task, with often somewhat disappointing results. In recent years there have been many attempts to develop computer assisted methods to both improve the results and to decrease the time and effort necessary to develop models. These methods have had mixed results, and have often been proprietary.</p>
+<p>Modifying reservoir models so that they are capable of matching observed data (history matching) and making reasonable predictions has long been a very time consuming and arduous task, with often somewhat disappointing results. In recent years there have been many attempts to develop computer assisted methods to both improve the results and to decrease the time and effort necessary to develop models. These methods have had mixed results, and have often been proprietary.</p>
 <p>This module, along with other associated modules, is an attempt to develop a workflow that combines the use of the OPM tools with tools already existing in R. Particular effort is made to incorporate the excellent set of tools developed by the <a href="http://dice.emse.fr/">DICE</a> and <a href="http://www.redice-project.org/">ReDICE</a> consortia to improve complex computer models.</p>
 </div>
 <div id="first-things-first-run-a-simple-model" class="section level2">
@@ -89,11 +89,11 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <p>In history match or development scenario projects, it is expected that most of the case decks will be generated from a template deck (also stored in the DECKS directory). Using a template is important, as it allows easy tracking of how changes to the input deck influence changes in the simulation output. Each case name should have a base part and a variant part, separated by an underscore, “_“. The base part should indicate which template deck was used to generate the case.</p>
 <p>Three functions are needed to run a very simple model:</p>
 <ol style="list-style-type: decimal">
-<li><strong><em>runflow</em></strong> allows you to run the simulator, if you have an appropriate eclipse style deck</li>
-<li><strong><em>flow2csv</em></strong> converts Eclipse style output to a csv file and loads it</li>
-<li><strong><em>plotcase</em></strong> plots the simulator output data from the csv file</li>
+<li><strong><em>runflow</em></strong> allows you to run the simulator, if you have an appropriate eclipse style deck.</li>
+<li><strong><em>eclsum</em></strong> converts Eclipse style summary output to a csv file, and loads it.</li>
+<li><strong><em>ploteach</em></strong> plots the simulator output data from the csv file.</li>
 </ol>
-<p>Here is an example running the <a href="http://www.ipt.ntnu.no/~kleppe/pub/SPE-COMPARATIVE/papers/first.pdf">SPE1</a> test deck:</p>
+<p>Here is an example running the <a href="http://www.ipt.ntnu.no/~kleppe/pub/SPE-COMPARATIVE/papers/first.pdf">SPE1</a> test deck from the first SPE Comparative Solution Project:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(runOPM)
 <span class="co"># get the SPE1 deck form the package extdata directory</span>
 deck &lt;-<span class="st"> </span><span class="kw">system.file</span>(<span class="st">&quot;extdata&quot;</span>, <span class="st">&quot;SPE1_CASE1.DATA&quot;</span>, <span class="dt">package =</span> <span class="st">&quot;runOPM&quot;</span>)

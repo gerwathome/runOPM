@@ -1,8 +1,10 @@
-#' @title Eclipse style summary file to csv
+#' @title Read an Eclipse style summary file into R and save it as csv file
 #' @description This function converts Eclipse style xy type output to a csv file for later use.
 #' @param casename The deck basename of an Eclipse style simulation summary output.  A perl style regular expression may be used to find multiple summary files.  Default behavior to to search recursively in the basedir to find a list of summary files.
 #' @param basedir The path to the base directory of a simulation project.  The default is the current directory.
-#' @return The function writes out a csv file for each input summary file.  It also appends the new summary data to a csv file with the combined results of all previous runs, and returns a dataframe with the combined summary data.  When the casename duplicates a casename from a previous combined results, the new case is substituted for the old case.
+#' @details The ability to parse the summary files resides in libecl, created by Statoil for use in their Ensemble Reservoir Tool.  This function currently uses the Python wrappers available for libecl, because I haven't yet learned how to use the library directly.
+#' @return The function writes out a csv file for each input summary file, into  the appropriate simulation run output directory.  It also appends the new summary data to a csv file with the combined results of all previous runs (in the REPORTS sub directory), and returns a dataframe with the combined summary data.  When the casename duplicates a casename from a previous combined results, the new case is substituted for the old case.
+#' @references http://ert.nr.no/ert/index.php/Main_Page, https://github.com/Statoil/libecl
 #' @export
 #------------------------------------------------------------------------------
 eclsum <- function(casename = "^.+", basedir="."){
@@ -49,12 +51,11 @@ eclsum <- function(casename = "^.+", basedir="."){
       long <- rbind(long, .wide2long(wide))
       readr::write_csv(long, projsum)
       return(long)
-    }
+    }else{warning("Failed to parse ", infile)}
   }
   return(rslts_long)
 }
 #------------------------------------------------------------------------------
-#' @export
 .wide2long <- function(df){
   dfl <- data.frame(
     CASENAME=character(),
@@ -96,7 +97,6 @@ eclsum <- function(casename = "^.+", basedir="."){
 # formatted unified: .FUNSMRY
 # formatted not unified: .Axxxx
 # look for only unified files, for now
-#' @export
 .findDecks <- function(basedir = ".",
                        casename = "^.+",
                        ext = c(".data", ".DATA"),
@@ -117,7 +117,7 @@ eclsum <- function(casename = "^.+", basedir="."){
   }
   return(decks)
 }
-
+#------------------------------------------------------------------------------
 .findSummary <- function(basedir = ".",
                          casename = "^.+",
                          recursive = TRUE){
@@ -133,7 +133,6 @@ eclsum <- function(casename = "^.+", basedir="."){
 }
 #------------------------------------------------------------------------------
 # this isn't called directly, but used by add_gor and add_wor
-#' @export
 .wgnames <- function(df){
 #  pat <- "^\\w+\\.(\\w+)$";
   pat <- "^\\w+:(\\w+)$";
@@ -162,7 +161,6 @@ eclsum <- function(casename = "^.+", basedir="."){
   return(df)
 }
 #------------------------------------------------------------------------------
-#' @export
 .add_wor <- function(df){
   wells <- .wgnames(df)
   for(well in wells){
@@ -184,7 +182,6 @@ eclsum <- function(casename = "^.+", basedir="."){
 #------------------------------------------------------------------------------
 # functionality to check deck for units type needs to be tested
 # still nned to see what the Metric units are
-#' @export
 .kw2units <- function(keyword,type="FIELD", deck=NULL){
   if(!is.null(deck)){type <- .findUnitType(deck)}
   unitsF <- switch(keyword,
@@ -227,7 +224,6 @@ eclsum <- function(casename = "^.+", basedir="."){
   return(units)
 }
 #------------------------------------------------------------------------------
-#' @export
 .findUnitType <- function(deck){
   if(!file.exists(deck)){warning(paste("Can't find deck to check units type.",
                                        "FIELD units is assumed", sep=" "))}
@@ -238,7 +234,6 @@ eclsum <- function(casename = "^.+", basedir="."){
   return(type)
 }
 #------------------------------------------------------------------------------
-#' @export
 .kw2descrip <- function(keyword){
   descrip <- switch(keyword,
                   "WOPR" = "Oil Prod Rate",
@@ -261,7 +256,6 @@ eclsum <- function(casename = "^.+", basedir="."){
   return(descrip)
 }
 #------------------------------------------------------------------------------
-#' @export
 .kw2label <- function(keyword, ...){
   label <- paste0(.kw2descrip(keyword), ", ", .kw2units(keyword))
   return(label)

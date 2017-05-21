@@ -2,22 +2,25 @@
 % Please edit documentation in R/04_plotting.R
 \name{ploteach}
 \alias{ploteach}
-\title{Create individual plot for each name and keyword in each case}
+\title{Create an individual plot for each name(WELL/FIELD/GROUP) and keyword, with multiple cases on each plot.}
 \usage{
 ploteach(long, casenames = NULL, wgnames = NULL, keywords = NULL,
   ncolumns = 3)
 }
 \arguments{
-\item{long}{A long format summary dataframe}
+\item{long}{A long format summary dataframe, not the csv file stored with each simulation case output.  This may be either the output of the eclsum function, or the file "REPORTS/PROJSUM.csv".}
 
-\item{casenames}{A list with casenames to be plotted}
+\item{casenames}{A list with casenames to be plotted.  Default is all casenames in the dataframe.}
 
-\item{wgnames}{A list with well/group/filed names to be plotted}
+\item{wgnames}{A list with well/group/filed names to be plotted.  Default is all WELL/FIELD/GROUP names in the dataframe.}
 
-\item{keywords}{A list with parameters to be plotted, e.g. "WOPR"}
+\item{keywords}{A list with parameters to be plotted, e.g. "WOPR".  Default is all keywords in the dataframe.}
 
-\item{ncolumns}{How many columns of plots to display}
+\item{ncolumns}{How many columns of plots to display.  The default is a display 3 columns wide, with as many rows as necessary to plot all of the desired plots.}
 }
 \description{
 This function accepts a long dataframe as input, and creates plots using ggplot
+}
+\details{
+The intent of this function is to compare multiple runs (i.e. "cases") on the same plot.  With too many cases, the plot will quickly become illegible, so a reasonable selection should be made.
 }

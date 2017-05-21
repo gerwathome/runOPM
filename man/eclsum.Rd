@@ -2,7 +2,7 @@
 % Please edit documentation in R/03_gathering.R
 \name{eclsum}
 \alias{eclsum}
-\title{Eclipse style summary file to csv}
+\title{Read an Eclipse style summary file into R and save it as csv file}
 \usage{
 eclsum(casename = "^.+", basedir = ".")
 }
@@ -12,8 +12,14 @@ eclsum(casename = "^.+", basedir = ".")
 \item{basedir}{The path to the base directory of a simulation project.  The default is the current directory.}
 }
 \value{
-The function writes out a csv file for each input summary file.  It also appends the new summary data to a csv file with the combined results of all previous runs, and returns a dataframe with the combined summary data.  When the casename duplicates a casename from a previous combined results, the new case is substituted for the old case.
+The function writes out a csv file for each input summary file, into  the appropriate simulation run output directory.  It also appends the new summary data to a csv file with the combined results of all previous runs (in the REPORTS sub directory), and returns a dataframe with the combined summary data.  When the casename duplicates a casename from a previous combined results, the new case is substituted for the old case.
 }
 \description{
 This function converts Eclipse style xy type output to a csv file for later use.
+}
+\details{
+The ability to parse the summary files resides in libecl, created by Statoil for use in their Ensemble Reservoir Tool.  This function currently uses the Python wrappers available for libecl, because I haven't yet learned how to use the library directly.
+}
+\references{
+http://ert.nr.no/ert/index.php/Main_Page, https://github.com/Statoil/libecl
 }

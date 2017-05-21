@@ -18,9 +18,9 @@ runflow(deckname, basedir = ".", sim_exec = "flow", restart = FALSE,
 
 \item{sim_version}{one of c("stable", "latest")}
 
-\item{queue}{one of c("background", "queue_name", "AWS").  Currently only "background" is functional.}
+\item{queue}{one of c("background", "PBS_queue_name", "AWS").  Currently only "background" is functional.}
 
-\item{wait}{A logical indicating whether to wait for the model to finish before proceeding.  The default is FALSE, to run models asynchronously.}
+\item{wait}{A logical indicating whether to wait for the model to finish before proceeding.  The default is FALSE, i.e. to run models asynchronously.}
 }
 \value{
 The function uses system2 to execute the simulation run.  Standard error and standard out are redirected to a file.  A non-zero return indicates an error. The function's purpose is the side effect of submitting a job to run somewhere.
@@ -30,10 +30,15 @@ This function deals with the details of running a reservoir simulation model.  O
 }
 \details{
 A subdirectory of the the outdir with the base name of the input deck will be created, keeping each simulation run in its own directory.
-Restarts probably need to be thought out a little better.
-The stable executable is assumed to be in /usr/bin and the latest version in /usr/bin/local.  This is consistent with "stable" being the version installed from binaries and "latest" being compiled locally.
+
+Restarts probably need to be thought out a little better, and may not work at all, yet.
+
+The stable executable is assumed to be in /usr/bin and the latest version in /usr/bin/local.  This is consistent with "stable" being the version installed from binaries and "latest" being compiled locally on a Ubuntu machine.
+
 Only the "background" queue currently works.  Submission to a PBS queue is a short term goal and submission to an AWS batch queue is a longer term goal.
+
 It might be desirable to look at the deckname file to determine which executable is appropriate (i.e. which keywords are in the deck).
+
 As OPM simulators are not currently supported on Windows, this package is linux specific.
 }
 \references{

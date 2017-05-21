@@ -1,45 +1,19 @@
 #------------------------------------------------------------------------------
-#' @title Plot simulation results from csv files
-#' @description This function accepts multiple csv files as input, and plots history match plots using ggplot
-#' @param basefile The full path (relative or absolute) to a csv file with data to be used to compare against multiple cases, e.g the history file to be compared with multiple model runs.
-#' @param compfiles A list of csv files with data to be compared against the base file.
-#' @param template A file describing which data is tobe used in the comparison plots
-#' @param outdir Where the output plots should be stored.
-#' @export
-#plotflow <- function(basefile, compfiles, template, outdir="."){
-plotcase <- function(casedata){
-  ggp <- ggplot2::ggplot(data=casedata,
-                         ggplot2::aes(x=DATE, y= VALUE, color = KEYWORD))
-  ggp <- ggp + ggplot2::geom_line()
-  ggp <- ggp + ggplot2::facet_grid(KEYWORD ~ WGNAME)
-  ggp
-}
-#------------------------------------------------------------------------------
-#' @export
-.uniquevars <- function(long){
-  vl <- unique(paste(long$CASENAME,long$WGNAME,long$KEYWORD,sep=":"))
-  vldf <- as.data.frame(t(as.data.frame(strsplit(vl,":"))),
-                        stringsAsFactors = FALSE)
-  rownames(vldf) <- NULL
-  rownames(vldf) <- rownames(vldf, do.NULL = FALSE, prefix="")
-  colnames(vldf) <- c("CASENAME","WGNAME","KEYWORD")
-  return(vldf)
-}
-#------------------------------------------------------------------------------
-#' @title Create individual plot for each name and keyword in each case
+#' @title Create an individual plot for each name(WELL/FIELD/GROUP) and keyword, with multiple cases on each plot.
 #' @description This function accepts a long dataframe as input, and creates plots using ggplot
-#' @param long A long format summary dataframe
-#' @param casenames A list with casenames to be plotted
-#' @param wgnames A list with well/group/filed names to be plotted
-#' @param keywords A list with parameters to be plotted, e.g. "WOPR"
-#' @param ncolumns How many columns of plots to display
+#' @param long A long format summary dataframe, not the csv file stored with each simulation case output.  This may be either the output of the eclsum function, or the file "REPORTS/PROJSUM.csv".
+#' @param casenames A list with casenames to be plotted.  Default is all casenames in the dataframe.
+#' @param wgnames A list with well/group/filed names to be plotted.  Default is all WELL/FIELD/GROUP names in the dataframe.
+#' @param keywords A list with parameters to be plotted, e.g. "WOPR".  Default is all keywords in the dataframe.
+#' @param ncolumns How many columns of plots to display.  The default is a display 3 columns wide, with as many rows as necessary to plot all of the desired plots.
+#' @details The intent of this function is to compare multiple runs (i.e. "cases") on the same plot.  With too many cases, the plot will quickly become illegible, so a reasonable selection should be made.
 #' @export
 ploteach <- function(long,
                      casenames = NULL,
                      wgnames = NULL,
                      keywords = NULL,
                      ncolumns = 3){
-  # all of the combinations of case, we3ll and parameter with data
+  # all of the combinations of case, well and parameter with data
   vldf <- .uniquevars(long)
   df <- vldf[0,]
   # filter down to selected cases
@@ -100,5 +74,15 @@ ploteach <- function(long,
     print(ggp)
   }
   par(op)
+}
+#------------------------------------------------------------------------------
+.uniquevars <- function(long){
+  vl <- unique(paste(long$CASENAME,long$WGNAME,long$KEYWORD,sep=":"))
+  vldf <- as.data.frame(t(as.data.frame(strsplit(vl,":"))),
+                        stringsAsFactors = FALSE)
+  rownames(vldf) <- NULL
+  rownames(vldf) <- rownames(vldf, do.NULL = FALSE, prefix="")
+  colnames(vldf) <- c("CASENAME","WGNAME","KEYWORD")
+  return(vldf)
 }
 #------------------------------------------------------------------------------
