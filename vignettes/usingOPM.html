@@ -12,7 +12,7 @@
 
 <meta name="author" content="George Williams" />
 
-<meta name="date" content="2017-05-21" />
+<meta name="date" content="2017-05-22" />
 
 <title>Using OPM</title>
 
@@ -70,26 +70,27 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 <h1 class="title toc-ignore">Using OPM</h1>
 <h4 class="author"><em>George Williams</em></h4>
-<h4 class="date"><em>2017-05-21</em></h4>
+<h4 class="date"><em>2017-05-22</em></h4>
 
 
 
-<p><a href="http://opm-project.org/">OPM</a> (The Open Porous Media initiative) is a group developing a set of open source tools that allow the scale-up and modeling of fluid flow in subsurface reservoirs. The tools being developed use the industry standard Eclipse data format for input and output. OPM is sponsered by a number of Norwegian organizations, including IRIS, Sintef and Statoil.</p>
+<p><a href="http://opm-project.org/">OPM</a> (The Open Porous Media initiative) is a group developing a set of open source tools that allow the scale-up and modeling of fluid flow in subsurface reservoirs. The tools being developed use the industry standard Eclipse data format for input and output. OPM is sponsered by a number of Norwegian organizations, including <a href="http://www.iris.no/research/energy">IRIS</a>, <a href="http://www.sintef.no/en/information-and-communication-technology-ict/applied-mathematics/computational-geoscience/#/">Sintef</a> and <a href="https://www.statoil.com/">Statoil</a>.</p>
 <p>This vignette will eventually document a workflow for using the OPM tools, along with tools developed in R, to model a reservoir. In the mean time, it will be a random compilation of snippets documenting tools completed so far, the planned work flow, planned tools and notes to self.</p>
 <div id="the-vision" class="section level2">
 <h2>The Vision</h2>
 <p>Modifying reservoir models so that they are capable of matching observed data (history matching) and making reasonable predictions has long been a very time consuming and arduous task, with often somewhat disappointing results. In recent years there have been many attempts to develop computer assisted methods to both improve the results and to decrease the time and effort necessary to develop models. These methods have had mixed results, and have often been proprietary.</p>
 <p>This module, along with other associated modules, is an attempt to develop a workflow that combines the use of the OPM tools with tools already existing in R. Particular effort is made to incorporate the excellent set of tools developed by the <a href="http://dice.emse.fr/">DICE</a> and <a href="http://www.redice-project.org/">ReDICE</a> consortia to improve complex computer models.</p>
+<p>An additional idea that this package would like to support is that of <a href="https://www.practicereproducibleresearch.org/TOC.html">reproducible research</a>. Reproducible research mixes documentation with computation in a manner that allows the entire modeling process to be reproduced by a third party. This approach has great value in an environment where multiple partners may be contributing their expertise, and all need to agree on the results before a project may move forward.</p>
 </div>
 <div id="first-things-first-run-a-simple-model" class="section level2">
 <h2>First Things First: Run a Simple Model</h2>
 <p>Obviously, the OPM tools must be installed. Detailed instructions are available at the <a href="http://opm-project.org/">OPM</a> website. The website explains how to install ‘stable’ binary versions of the tools. It also explains how to download, build and install the sources from github. As the tools are currently in a very rapid state of development, it may be desirable to download and build the latest versions, if functionality that you need has been recently added.</p>
-<p>The functions for running and analyzing the simulation runs assume a consistent directory structure and file naming convention. A base or project directory will be defined for all runs. Within the base directory, there will be a DECKS directory, where all model decks will be stored. Underneath the DECKS directory will be a series of directories where include files may be stored. Some flexibility for include directories is acceptable, but one would expect GRID (static grid properties), PVT (fluid properties), RELPERM (relative permeability data), WELLS (well path and completion definition) and RECDAT (recurrent data such as producing rules and completion scheduling) directories. Flow tables (FLOT) should also have there own directory. Each directory may have multiple include file versions to capture ranges of uncertainty and various development scenarios.</p>
+<p>The functions for running and analyzing the simulation runs assume a consistent directory structure and file naming convention, even when running a “simple” model. A base or project directory will be defined for all runs. Within the base directory, there will be a DECKS directory, where all model decks will be stored. Underneath the DECKS directory will be a series of directories where include files may be stored. Some flexibility for include directories is acceptable, but one would expect GRID (static grid properties), PVT (fluid properties), RELPERM (relative permeability data), WELLS (well path and completion definition) and RECDAT (recurrent data such as producing rules and completion scheduling) directories. Flow tables (FLOT) should also have there own directory. Each directory may have multiple include file versions to capture ranges of uncertainty and various development scenarios.</p>
 <p>Within the base directory, and parallel to the decks directory, there will also be an OUTPUT directory and a REPORTS directory. The OUTPUT directory will have an individual directory for each simulation run, where all case specific files (except the deck) will be stored. The case directories will have the same name as the deck, without the deck suffix (either .data or .DATA). The REPORTS directory will include summary and analysis data that covers multiple cases.</p>
 <p>In history match or development scenario projects, it is expected that most of the case decks will be generated from a template deck (also stored in the DECKS directory). Using a template is important, as it allows easy tracking of how changes to the input deck influence changes in the simulation output. Each case name should have a base part and a variant part, separated by an underscore, “_“. The base part should indicate which template deck was used to generate the case.</p>
 <p>Three functions are needed to run a very simple model:</p>
 <ol style="list-style-type: decimal">
-<li><strong><em>runflow</em></strong> allows you to run the simulator, if you have an appropriate eclipse style deck.</li>
+<li><strong><em>runflow</em></strong> allows you to run the simulator, if you have an appropriate Eclipse style deck.</li>
 <li><strong><em>eclsum</em></strong> converts Eclipse style summary output to a csv file, and loads it.</li>
 <li><strong><em>ploteach</em></strong> plots the simulator output data from the csv file.</li>
 </ol>

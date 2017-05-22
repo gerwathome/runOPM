@@ -10,7 +10,7 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-[OPM](http://opm-project.org/) (The Open Porous Media initiative) is a group developing a set of open source tools that allow the scale-up and modeling of fluid flow in subsurface reservoirs.  The tools being developed use the industry standard Eclipse data format for input and output.  OPM is sponsered by a number of Norwegian organizations, including IRIS, Sintef and Statoil.
+[OPM](http://opm-project.org/) (The Open Porous Media initiative) is a group developing a set of open source tools that allow the scale-up and modeling of fluid flow in subsurface reservoirs.  The tools being developed use the industry standard Eclipse data format for input and output.  OPM is sponsered by a number of Norwegian organizations, including [IRIS](http://www.iris.no/research/energy), [Sintef](http://www.sintef.no/en/information-and-communication-technology-ict/applied-mathematics/computational-geoscience/#/) and [Statoil](https://www.statoil.com/).
 
 This vignette will eventually document a workflow for using the OPM tools, along with tools developed in R, to model a reservoir.  In the mean time, it will be a random compilation of snippets documenting tools completed so far, the planned work flow, planned tools and notes to self.
 
@@ -20,11 +20,13 @@ Modifying reservoir models so that they are capable of matching observed data (h
 
 This module, along with other associated modules, is an attempt to develop a workflow that combines the use of the OPM tools with tools already existing in R. Particular effort is made to incorporate the excellent set of tools developed by the [DICE](http://dice.emse.fr/) and [ReDICE](http://www.redice-project.org/) consortia to improve complex computer models.
 
+An additional idea that this package would like to support is that of [reproducible research](https://www.practicereproducibleresearch.org/TOC.html).  Reproducible research mixes documentation with computation in a manner that allows the entire modeling process to be reproduced by a third party.  This approach has great value in an environment where multiple partners may be contributing their expertise, and all need to agree on the results before a project may move forward.
+
 ## First Things First:  Run a Simple Model
 
 Obviously, the OPM tools must be installed.  Detailed instructions are available at the [OPM](http://opm-project.org/) website.  The website explains how to install 'stable' binary versions of the tools.  It also explains how to download, build and install the sources from github. As the tools are currently in a very rapid state of development, it may be desirable to download and build the latest versions, if functionality that you need has been recently added. 
 
-The functions for running and analyzing the simulation runs assume a consistent directory structure and file naming convention.  A base or project directory will be defined for all runs.  Within the base directory, there will be a DECKS directory, where all model decks will be stored.  Underneath the DECKS directory will be a series of directories where include files may be stored.  Some flexibility for include directories is acceptable, but one would expect GRID (static grid properties), PVT (fluid properties), RELPERM (relative permeability data), WELLS (well path and completion definition) and RECDAT (recurrent data such as producing rules and completion scheduling) directories.  Flow tables (FLOT) should also have there own directory.  Each directory may have multiple include file versions to capture ranges of uncertainty and various development scenarios.
+The functions for running and analyzing the simulation runs assume a consistent directory structure and file naming convention, even when running a "simple" model.  A base or project directory will be defined for all runs.  Within the base directory, there will be a DECKS directory, where all model decks will be stored.  Underneath the DECKS directory will be a series of directories where include files may be stored.  Some flexibility for include directories is acceptable, but one would expect GRID (static grid properties), PVT (fluid properties), RELPERM (relative permeability data), WELLS (well path and completion definition) and RECDAT (recurrent data such as producing rules and completion scheduling) directories.  Flow tables (FLOT) should also have there own directory.  Each directory may have multiple include file versions to capture ranges of uncertainty and various development scenarios.
 
 Within the base directory, and parallel to the decks directory, there will also be an OUTPUT directory and a REPORTS directory.  The OUTPUT directory will have an individual directory for each simulation run, where all case specific files (except the deck) will be stored.  The case directories will have the same name as the deck, without the deck suffix (either .data or .DATA).  The REPORTS directory will include summary and analysis data that covers multiple cases.
 
@@ -32,7 +34,7 @@ In history match or development scenario projects, it is expected that most of t
 
 Three functions are needed to run a very simple model:
 
-1. ***runflow*** allows you to run the simulator, if you have an appropriate eclipse style deck.
+1. ***runflow*** allows you to run the simulator, if you have an appropriate Eclipse style deck.
 2. ***eclsum*** converts Eclipse style summary output to a csv file, and loads it.
 3. ***ploteach*** plots the simulator output data from the csv file.
 
