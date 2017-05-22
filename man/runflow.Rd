@@ -42,7 +42,7 @@ It might be desirable to look at the deckname file to determine which executable
 As OPM simulators are not currently supported on Windows, this package is linux specific.
 }
 \references{
-http://opm-project.org/
+\href{http://opm-project.org/}{The Open Porous Media initiative}
 }
 \author{
 George Williams

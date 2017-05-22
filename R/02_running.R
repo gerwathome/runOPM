@@ -20,7 +20,7 @@
 #' As OPM simulators are not currently supported on Windows, this package is linux specific.
 #' @author George Williams
 #' @return The function uses system2 to execute the simulation run.  Standard error and standard out are redirected to a file.  A non-zero return indicates an error. The function's purpose is the side effect of submitting a job to run somewhere.
-#' @references http://opm-project.org/
+#' @references \href{http://opm-project.org/}{The Open Porous Media initiative}
 #' @export
 #'
 runflow <- function(deckname,

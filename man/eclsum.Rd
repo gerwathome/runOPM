@@ -21,5 +21,5 @@ This function converts Eclipse style xy type output to a csv file for later use.
 The ability to parse the summary files resides in libecl, created by Statoil for use in their Ensemble Reservoir Tool.  This function currently uses the Python wrappers available for libecl, because I haven't yet learned how to use the library directly.
 }
 \references{
-http://ert.nr.no/ert/index.php/Main_Page, https://github.com/Statoil/libecl
+\href{http://ert.nr.no/ert/index.php/Main_Page}{Ensemble Reservoir Tool}, \href{https://github.com/Statoil/libecl}{libecl}
 }

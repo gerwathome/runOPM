@@ -4,7 +4,7 @@
 #' @param basedir The path to the base directory of a simulation project.  The default is the current directory.
 #' @details The ability to parse the summary files resides in libecl, created by Statoil for use in their Ensemble Reservoir Tool.  This function currently uses the Python wrappers available for libecl, because I haven't yet learned how to use the library directly.
 #' @return The function writes out a csv file for each input summary file, into  the appropriate simulation run output directory.  It also appends the new summary data to a csv file with the combined results of all previous runs (in the REPORTS sub directory), and returns a dataframe with the combined summary data.  When the casename duplicates a casename from a previous combined results, the new case is substituted for the old case.
-#' @references http://ert.nr.no/ert/index.php/Main_Page, https://github.com/Statoil/libecl
+#' @references \href{http://ert.nr.no/ert/index.php/Main_Page}{Ensemble Reservoir Tool}, \href{https://github.com/Statoil/libecl}{libecl}
 #' @export
 #------------------------------------------------------------------------------
 eclsum <- function(casename = "^.+", basedir="."){
@@ -41,7 +41,7 @@ eclsum <- function(casename = "^.+", basedir="."){
       rPython::python.exec("sum_data.exportCSV(outfile, date_format='%d-%b-%Y', sep=',')")
       rPython::python.assign("sum_data","None")
       wide <- read.csv(file=outfile)
-      wide <- wide[, colSums(wide != 0) > 0]
+      wide <- wide[, colSums(wide != 0, na.rm = TRUE) > 0]
       grep("F(...)", colnames(wide), perl=TRUE)
       colnames(wide) <- sub("F(...)", "W\\1:FIELD", colnames(wide), perl=TRUE)
       wide$DATE <- as.Date(wide$DATE, "%d-%b-%Y")
