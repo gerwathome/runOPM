@@ -10,4 +10,6 @@ For the module to be useful, the OPM tools must first be installed.  Detailed in
 This module may be installed from within R using Hadley Wickham's devtools package:
 
 	install.packages("devtools")
-	devtools::install_github("gerwathome/runOPM")
+	devtools::install_github("gerwathome/runOPM", build_vignettes = TRUE)
+
+The vignette "Using OPM" documents basic workflows, as well as things that I am thinking about as I try to develop this package.
