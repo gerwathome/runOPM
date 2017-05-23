@@ -38,12 +38,14 @@ EQLDIMS
 TABDIMS
 /
 
+
 OIL
 GAS
 WATER
 DISGAS
 -- As seen from figure 4 in Odeh, GOR is increasing with time,
 -- which means that dissolved gas is present
+
 
 FIELD
 
@@ -283,7 +285,6 @@ SUMMARY
 
 -- 1a) Oil rate vs time
 FOPR
--- Gas rate vs time
 FGPR
 -- 1b) GOR vs time
 FGOR
@@ -307,6 +308,7 @@ BGSAT
 10 10 3 /
 /
 
+-- In order to compare Eclipse with Flow:
 WBHP
   'INJ'
   'PROD'
@@ -336,12 +338,8 @@ WWPT
   'PROD'
 /
 WGOR
-   'PROD'
+  'PROD'
 /
--- WWOR kills flow
---WWOR
---   'PROD'
---/
 SCHEDULE
 -- -------------------------------------------------------------------------
 RPTSCHED
@@ -352,8 +350,9 @@ RPTRST
 
 
 -- If no resolution (i.e. case 1), the two following lines must be added:
-DRSDT
- 0 /
+--DRSDT
+-- 0 /
+-- Since this is Case 2, the two lines above have been commented out.
 -- if DRSDT is set to 0, GOR cannot rise and free gas does not 
 -- dissolve in undersaturated oil -> constant bubble point pressure
 
@@ -391,7 +390,7 @@ WCONINJE
 /
 -- Stated in Odeh that gas inj. rate (item 5) is 100MMscf per day
 -- BHP upper limit (item 7) should not be exceeding the highest
--- pressure in the PVT table=9014.7psia (default is 100 000psia)
+-- pressure in the PVT table=9014.7psia (default is 100 000psia) 
 
 TSTEP
 --Advance the simulater once a month for TEN years:

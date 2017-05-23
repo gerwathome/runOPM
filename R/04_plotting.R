@@ -40,7 +40,8 @@ ploteach <- function(long,
     }
     vldf <- df
   }
-  np <- length(vldf$CASENAME)
+  #pics <- unique(paste(vldf$WGNAME,vldf$KEYWORD,sep=":"))
+  np <- length(unique(paste(vldf$WGNAME,vldf$KEYWORD,sep=":")))
   if(np < 1){
     warning("No data selected for plotting.")
     np <- 1
@@ -57,7 +58,7 @@ ploteach <- function(long,
                            ggplot2::aes(x=DATE, y= VALUE, color = CASENAME))
     ggp <- ggp + ggplot2::geom_line()
     ggp <- ggp + ggplot2::labs(
-      title = paste("Well:  ", vldf$WGNAME[i], sep = " "),
+      title = paste0("Well:  ", vldf$WGNAME[i],":", vldf$KEYWORD[i]),
       y = .kw2label(vldf$KEYWORD[i])
     )
     ggp <- ggp + ggplot2::theme_bw()
@@ -69,7 +70,10 @@ ploteach <- function(long,
                                                 color = "black"),
       legend.spacing = grid::unit(0.1, units="points"),
       legend.justification = "right",
-      legend.position = c(0.99, 0.5)
+      legend.position = c(0.99, 0.5),
+      panel.grid.major = ggplot2::element_line(color="lightgrey",
+                                               size = 1,
+                                               linetype = 1)
     )
     print(ggp)
   }

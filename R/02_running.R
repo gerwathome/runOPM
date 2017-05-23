@@ -42,10 +42,12 @@ runflow <- function(deckname,
     ok <- makeproj(deckname, basedir)
     if(!ok){stop("Failed to create directory structure")}
   }
-  # If the directory exists, but the deck isn't there, this will copy it
   casename <- basename(deckname)
+  fromdeck <- normalizePath(deckname) # this must exist
   deck <- file.path(basedir, "DECKS", casename)
-  if(!file.exists(deck)){file.copy(deckname, deck)}
+  todeck <- suppressWarnings(normalizePath(deck)) # this may exist
+  # to avoid the possibility of copying a file on top of itself
+  if(!identical(fromdeck, todeck)){file.copy(fromdeck, todeck, overwrite = TRUE)}
   # This creates the output directory for this run
   casename <- sub("[.][^.]*$", "", casename, perl=TRUE)
   output_dir <- file.path(basedir, "OUTPUT", casename)

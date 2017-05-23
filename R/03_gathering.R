@@ -37,17 +37,20 @@ eclsum <- function(casename = "^.+", basedir="."){
     # the python structure is too complex to read in directly with RJSONIO
     try_err <- try(rPython::python.exec("sum_data = ecl.EclSum(infile)"),
                    silent=TRUE)
+    # Using ; as a seperator is important here, as some of the keys have commas
+    # in them
     if(is.null(try_err)){
-      rPython::python.exec("sum_data.exportCSV(outfile, date_format='%d-%b-%Y', sep=',')")
+      rPython::python.exec("sum_data.exportCSV(outfile, date_format='%d-%b-%Y', sep=';')")
       rPython::python.assign("sum_data","None")
-      wide <- read.csv(file=outfile)
-      wide <- wide[, colSums(wide != 0, na.rm = TRUE) > 0]
+      wide.raw <- read.csv(file=outfile, sep = ";", stringsAsFactors = FALSE)
+      wide <- wide.raw[, colSums(wide.raw != 0, na.rm = TRUE) > 0]
       grep("F(...)", colnames(wide), perl=TRUE)
-      colnames(wide) <- sub("F(...)", "W\\1:FIELD", colnames(wide), perl=TRUE)
+      colnames(wide) <- sub("F(...)", "W\\1.FIELD", colnames(wide), perl=TRUE)
+      colnames(wide) <- gsub(",","_", colnames(wide), perl=TRUE)
       wide$DATE <- as.Date(wide$DATE, "%d-%b-%Y")
       wide <- data.frame(CASE=rep(case,length(wide$DATE)),wide)
       wide <- .add_wor(wide)
-      wide <- .add_gor(wide)
+#      wide <- .add_gor(wide)
       long <- rbind(long, .wide2long(wide))
       readr::write_csv(long, projsum)
       return(long)
@@ -126,16 +129,16 @@ eclsum <- function(casename = "^.+", basedir="."){
                          casename = casename,
                          ext = ext,
                          recursive = recursive)
-  if(length(sumfiles) < 1){stop(paste0("Please provide a base directory ",
-                                      "and/or a casename to locate Eclipse",
-                                      " style summary output files"))}
+  if(length(sumfiles) < 1){stop(paste0("Failed to locate Eclipse style summary",
+                                       " output files.  Did the run ", casename,
+                                       " complete properly?"))}
   return(sumfiles)
 }
 #------------------------------------------------------------------------------
 # this isn't called directly, but used by add_gor and add_wor
 .wgnames <- function(df){
-#  pat <- "^\\w+\\.(\\w+)$";
-  pat <- "^\\w+:(\\w+)$";
+  pat <- "^\\w+\\.(\\w+)$";
+#  pat <- "^\\w+:(\\w+)$";
   kw.wgn <- colnames(df)[grep(pat, colnames(df), perl=TRUE)]
   wgn <- sub(pat, "\\1", kw.wgn, perl=TRUE)
   return(unique(wgn))
@@ -144,15 +147,15 @@ eclsum <- function(casename = "^.+", basedir="."){
 #' @export
 .add_gor <- function(df){
   wells <- .wgnames(df)
+  vars <- colnames(df)
   for(well in wells){
-    vars <- colnames(df)
     opr <- paste0("WOPR.",well)
     oprcol <- grep(opr, vars, fixed=TRUE)
     gpr <- paste0("WGPR.",well)
     gprcol <- grep(gpr, vars, fixed=TRUE)
     gor <- paste0("WGOR.",well)
-    if(oprcol & gprcol){
-      tmp <- df[,gprcol]/df[,oprcol]*1000
+    if(any(oprcol) & any(gprcol)){
+      tmp <- df[,gprcol]/df[,oprcol]
       tmp[df[,oprcol]==0] <- 0
       df <- cbind(df,tmp)
       colnames(df) <- c(vars,gor)
@@ -163,14 +166,14 @@ eclsum <- function(casename = "^.+", basedir="."){
 #------------------------------------------------------------------------------
 .add_wor <- function(df){
   wells <- .wgnames(df)
+  vars <- colnames(df)
   for(well in wells){
-    vars <- colnames(df)
     opr <- paste0("WOPR.",well)
     oprcol <- grep(opr, vars, fixed=TRUE)
     wpr <- paste0("WWPR.",well)
     wprcol <- grep(wpr, vars, fixed=TRUE)
     wor <- paste0("WWOR.",well)
-    if(oprcol & wprcol){
+    if(any(oprcol) & any(wprcol)){
       tmp <- df[,wprcol]/df[,oprcol]
       tmp[df[,oprcol]==0] <- 0
       df <- cbind(df,tmp)
@@ -191,7 +194,7 @@ eclsum <- function(casename = "^.+", basedir="."){
                    "WOPT" = "MSTB",      # Cum Oil Prod
                    "WWPT" = "MSTB",      # Cum Water Prod
                    "WGPT" = "MMSCF",     # Cum Gas Prod
-                   "WGOR" = "SCF/STB",   # Gas Oil Ratio
+                   "WGOR" = "MSCF/STB",   # Gas Oil Ratio
                    "WWOR" = "STB/STB",   # Water Oil Ratio
                    "WOIR" = "STBD",      # Oil Inj Rate
                    "WWIR" = "STBD",      # Water Inj Rate
@@ -209,7 +212,7 @@ eclsum <- function(casename = "^.+", basedir="."){
                    "WOPT" = "MSTB",      # Cum Oil Prod
                    "WWPT" = "MSTB",      # Cum Water Prod
                    "WGPT" = "MMSCF",     # Cum Gas Prod
-                   "WGOR" = "SCF/STB",   # Gas Oil Ratio
+                   "WGOR" = "MSCF/STB",   # Gas Oil Ratio
                    "WWOR" = "STB/STB",   # Water Oil Ratio
                    "WOIR" = "STBD",      # Oil Inj Rate
                    "WWIR" = "STBD",      # Water Inj Rate
