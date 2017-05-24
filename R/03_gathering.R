@@ -206,8 +206,10 @@ eclsum <- function(casename = "^.+", basedir="."){
                    "WWIT" = "MSTB",      # Cum  Water Inj
                    "WGIT" = "MMSCF",     # Cum  Gas Inj
                    "WBHP" = "PSIA",      # Bottom Hole Pressure
-                   "WBDP" = "PSIA"       # well bore pressure drop
-  )
+                   "WBDP" = "PSIA",      # well bore pressure drop
+                   "BPR" = "PSIA",       # block pressure
+                   ""
+                   )
   unitsM <- switch(keyword,
                    "WOPR" = "STBD",      # Oil Prod Rate
                    "WWPR" = "STBD",      # Water Prod Rate
@@ -224,7 +226,9 @@ eclsum <- function(casename = "^.+", basedir="."){
                    "WWIT" = "MSTB",      # Cum  Water Inj
                    "WGIT" = "MMSCF",     # Cum  Gas Inj
                    "WBHP" = "PSIA",      # Bottom Hole Pressure
-                   "WBDP" = "PSIA"       # well bore pressure drop
+                   "WBDP" = "PSIA",      # well bore pressure drop
+                   "BPR" = "PSIA",       # block pressure
+                   ""
   )
   units <- ifelse(type == "FIELD", unitsF, unitsM)
   return(units)
