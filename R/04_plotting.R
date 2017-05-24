@@ -54,11 +54,21 @@ ploteach <- function(long,
     filt <-vldf$WGNAME[i] == long$WGNAME &
       vldf$KEYWORD[i] == long$KEYWORD
     plotdf <- long[filt,]
+    n <- vldf$WGNAME[i]
+    k <- vldf$KEYWORD[i]
+    lead <- "Well:  "
+    b1pat <- "\\d+"
+    b2pat <- "\\d+_\\d+_\\d+"
+    fpat <- "FIELD"
+    if(any(grep(b1pat,n,perl=TRUE)) |
+       any(grep(b2pat,n,perl=TRUE))){lead <- "Block:  "}
+    if(any(grep(fpat,n,perl=TRUE))){lead <- ""}
+    title <- paste0(lead,n,":",k)
     ggp <- ggplot2::ggplot(data=plotdf,
                            ggplot2::aes(x=DATE, y= VALUE, color = CASENAME))
     ggp <- ggp + ggplot2::geom_line()
     ggp <- ggp + ggplot2::labs(
-      title = paste0("Well:  ", vldf$WGNAME[i],":", vldf$KEYWORD[i]),
+      title = title,
       y = .kw2label(vldf$KEYWORD[i])
     )
     ggp <- ggp + ggplot2::theme_bw()
