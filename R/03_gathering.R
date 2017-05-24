@@ -46,7 +46,9 @@ eclsum <- function(casename = "^.+", basedir="."){
       wide <- wide.raw[, colSums(wide.raw != 0, na.rm = TRUE) > 0]
       grep("F(...)", colnames(wide), perl=TRUE)
       colnames(wide) <- sub("F(...)", "W\\1.FIELD", colnames(wide), perl=TRUE)
-      colnames(wide) <- gsub(",","_", colnames(wide), perl=TRUE)
+      inxyzpat <- "(\\d+)\\.(\\d+)\\.(\\d+)"
+      outxyzpat <- "\\1_\\2_\\3"
+      colnames(wide) <- gsub(inxyzpat, outxyzpat, colnames(wide), perl=TRUE)
       wide$DATE <- as.Date(wide$DATE, "%d-%b-%Y")
       wide <- data.frame(CASE=rep(case,length(wide$DATE)),wide)
       wide <- .add_wor(wide)
@@ -72,19 +74,20 @@ eclsum <- function(casename = "^.+", basedir="."){
     stringsAsFactors=FALSE)
   pat <- "^(\\w+)\\.(\\w+)$";
 #  pat <- "^(\\w+):(\\w+)$";
-  kw.wgn <- colnames(df)[grep(pat, colnames(df), perl=TRUE)]
+  vars <-  colnames(df)
+  kw.wgn <- vars[grep(pat, vars, perl=TRUE)]
   kw <- sub(pat, "\\1", kw.wgn, perl=TRUE)
   wgn <- sub(pat, "\\2", kw.wgn, perl=TRUE)
   ndays <- length(df$DAYS)
   for(i in 1:length(wgn)){
 #    if(all(df[,3+i]==0, na.rm = TRUE)){next}
     tdfl <- data.frame(
-      CASENAME = df[,1],
-      DAYS = df[,2],
-      DATE = df[,3],
+      CASENAME = df[,"CASE"],
+      DAYS = df[,"DAYS"],
+      DATE = df[,"DATE"],
       WGNAME = rep(wgn[i],ndays),
       KEYWORD = rep(kw[i],ndays),
-      VALUE = df[,3+i],
+      VALUE = df[,kw.wgn[i]],
       UNITS = rep(.kw2units(kw[i]),ndays),
       COMMENT = "",
       stringsAsFactors = FALSE)
