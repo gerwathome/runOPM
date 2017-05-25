@@ -40,9 +40,11 @@ eclsum <- function(casename = "^.+", basedir="."){
     # Using ; as a seperator is important here, as some of the keys have commas
     # in them
     if(is.null(try_err)){
-      rPython::python.exec("sum_data.exportCSV(outfile, date_format='%d-%b-%Y', sep=';')")
+      rPython::python.exec("sum_data.exportCSV(outfile, date_format='%d-%b-%Y',
+                           sep=';')")
       rPython::python.assign("sum_data","None")
-      wide.raw <- read.csv(file=outfile, sep = ";", stringsAsFactors = FALSE)
+      wide.raw <- utils::read.csv(file=outfile, sep = ";",
+                                 stringsAsFactors = FALSE)
       wide <- wide.raw[, colSums(wide.raw != 0, na.rm = TRUE) > 0]
       grep("F(...)", colnames(wide), perl=TRUE)
       colnames(wide) <- sub("F(...)", "W\\1.FIELD", colnames(wide), perl=TRUE)
@@ -58,7 +60,7 @@ eclsum <- function(casename = "^.+", basedir="."){
       return(long)
     }else{warning("Failed to parse ", infile)}
   }
-  return(rslts_long)
+  return(long)
 }
 #------------------------------------------------------------------------------
 .wide2long <- function(df){
@@ -147,7 +149,6 @@ eclsum <- function(casename = "^.+", basedir="."){
   return(unique(wgn))
 }
 #------------------------------------------------------------------------------
-#' @export
 .add_gor <- function(df){
   wells <- .wgnames(df)
   vars <- colnames(df)
@@ -238,7 +239,7 @@ eclsum <- function(casename = "^.+", basedir="."){
   if(!file.exists(deck)){warning(paste("Can't find deck to check units type.",
                                        "FIELD units is assumed", sep=" "))}
   type <- ifelse(
-    purr::is_empty(grep('METRIC',readLines(deck))),
+    purrr::is_empty(grep('METRIC',readLines(deck))),
     "FIELD",
     "METRIC")
   return(type)
@@ -261,7 +262,9 @@ eclsum <- function(casename = "^.+", basedir="."){
                   "WWIT" = "Cum Water Inj",
                   "WGIT" = "Cum Gas Inj",
                   "WBHP" = "Bottom Hole Pressure",
-                  "WBDP" = "Well Bore Pressure Drop"
+                  "WBDP" = "Well Bore Pressure Drop",
+                  "BPR"  = "Block Pressure",
+                  "Unknown Parameter"
   )
   return(descrip)
 }

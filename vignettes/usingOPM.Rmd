@@ -10,21 +10,21 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-[OPM](http://opm-project.org/) (The Open Porous Media initiative) is a group developing a set of open source tools that allow the scale-up and modeling of fluid flow in subsurface reservoirs.  The tools being developed use the industry standard Eclipse data format for input and output.  OPM is sponsered by a number of Norwegian organizations, including [IRIS](http://www.iris.no/research/energy), [Sintef](http://www.sintef.no/en/information-and-communication-technology-ict/applied-mathematics/computational-geoscience/#/) and [Statoil](https://www.statoil.com/).
+[OPM](http://opm-project.org/) (The Open Porous Media initiative) is a group developing a set of open source tools that allow the scale-up and modeling of fluid flow in subsurface reservoirs.  The tools being developed use the industry standard Eclipse data format for input and output.  OPM is sponsored by a number of Norwegian organizations, including [IRIS](http://www.iris.no/research/energy), [Sintef](http://www.sintef.no/en/information-and-communication-technology-ict/applied-mathematics/computational-geoscience/#/) and [Statoil](https://www.statoil.com/).
 
 This vignette will eventually document a workflow for using the OPM tools, along with tools developed in R, to model a reservoir.  In the mean time, it will be a random compilation of snippets documenting tools completed so far, the planned work flow, planned tools and notes to self.
 
 ## The Vision
-
-Modifying reservoir models so that they are capable of matching observed data (history matching) and making reasonable predictions has long been a very time consuming and arduous task, with often somewhat disappointing results.  In recent years there have been many attempts to develop computer assisted methods to both improve the results and to decrease the time and effort necessary to develop models.  These methods have had mixed results, and have often been proprietary.
+Modifying reservoir models so that they are capable of matching observed data (history matching) and making reasonable predictions has long been a very time consuming and arduous task, with often somewhat disappointing results.  In recent years there have been many attempts to develop computer assisted methods to both improve the results and to decrease the time and effort necessary to develop models.  These methods have had mixed results, and have often been proprietary. ***(add references here)***
 
 This module, along with other associated modules, is an attempt to develop a workflow that combines the use of the OPM tools with tools already existing in R. Particular effort is made to incorporate the excellent set of tools developed by the [DICE](http://dice.emse.fr/) and [ReDICE](http://www.redice-project.org/) consortia to improve complex computer models.
 
-An additional idea that this package would like to support is that of [reproducible research](https://www.practicereproducibleresearch.org/TOC.html).  Reproducible research mixes documentation with computation in a manner that allows the entire modeling process to be reproduced by a third party.  This approach has great value in an environment where multiple partners may be contributing their expertise, and all need to agree on the results before a project may move forward.
+An additional idea that this package would like to support is that of [reproducible research](https://www.practicereproducibleresearch.org/TOC.html).  Reproducible research mixes documentation with computation in a manner that allows the entire modeling process to be reproduced by a third party.  Its' intent is to start with the cruftiest of data, and implement documentation and calculation of the entire workflow to the final product.
+
+This approach has great value in an environment where multiple partners may be contributing their expertise, and all need to agree on the results before a project may move forward.  For the purposes of a reservoir modeling workflow, a reproducible research approach is more aspirational, than currently achievable.  The variety of data necessary, the tools necessary to process the data, and level of interpretation required make the process difficult to completely reproduce.  The workflow developed here envisions creating a GitHub repository for a model, using RMarkdown for documentation, and RStudio for running, analyzing, and committing to version control. Tools will gradually be added to make different parts of the process more reproducible.
 
 ## First Things First:  Run a Simple Model
-
-Obviously, the OPM tools must be installed.  Detailed instructions are available at the [OPM](http://opm-project.org/) website.  The website explains how to install 'stable' binary versions of the tools.  It also explains how to download, build and install the sources from github. As the tools are currently in a very rapid state of development, it may be desirable to download and build the latest versions, if functionality that you need has been recently added. 
+Obviously, the OPM tools must be installed.  Detailed instructions are available at the [OPM](http://opm-project.org/) website.  The website explains how to install 'stable' binary versions of the tools.  It also explains how to download, build and install the sources from GitHub. As the OPM tools are currently in a very rapid state of development, it may sometimes be desirable to download and build the latest versions, if functionality that you need has been recently added. 
 
 The functions for running and analyzing the simulation runs assume a consistent directory structure and file naming convention, even when running a "simple" model.  A base or project directory will be defined for all runs.  Within the base directory, there will be a DECKS directory, where all model decks will be stored.  Underneath the DECKS directory will be a series of directories where include files may be stored.  Some flexibility for include directories is acceptable, but one would expect GRID (static grid properties), PVT (fluid properties), RELPERM (relative permeability data), WELLS (well path and completion definition) and RECDAT (recurrent data such as producing rules and completion scheduling) directories.  Flow tables (FLOT) should also have there own directory.  Each directory may have multiple include file versions to capture ranges of uncertainty and various development scenarios.
 
@@ -38,7 +38,7 @@ Three functions are needed to run a very simple model:
 2. ***eclsum*** converts Eclipse style summary output to a csv file, and loads it.
 3. ***ploteach*** plots the simulator output data from the csv file.
 
-Here is an example running the [SPE1](http://www.ipt.ntnu.no/~kleppe/pub/SPE-COMPARATIVE/papers/first.pdf) test deck from the first SPE Comparative Solution Project:
+Here is an example running the [SPE1](http://www.ipt.ntnu.no/~kleppe/pub/SPE-COMPARATIVE/papers/first.pdf) test deck from the first SPE Comparative Solution Project.  It is a very simple model with one producer and one gas injector.  There is no movable water in the model.
 
 ```{r run_simple, cache=FALSE, out.width='30%', out.height='30%'}
 library(runOPM)
@@ -46,5 +46,45 @@ library(runOPM)
 deck <- system.file("extdata", "SPE1_CASE1.DATA", package = "runOPM")
 runflow(deck, basedir="tmp", wait=TRUE)
 rslts <- eclsum(casename="SPE1_CASE1", basedir="tmp")
-ploteach(rslts)
+ploteach(rslts, wgnames="FIELD")
 ```
+```{r cleanup_simple, echo=FALSE, warning=FALSE, message=FALSE, eval=TRUE}
+unlink("tmp", recursive = TRUE, force = TRUE)
+```
+## History Match Workflow
+History matching assumes that you are starting with a suitable geologic model, or possibly a suite of model variations.  This cannot be over emphasized.  The most useful and reliable models are developed iteratively, with close communication between the earth scientists and the engineers.
+
+This module is only dealing with the engineering portion of the workflow.  It implements a standard experimental design approach.  If the user would prefer an Ensemble Kalman Filter approach, the [ERT](http://ert.nr.no/ert/index.php/Main_Page) project providses appropriate tools.  We assume the user is comfortable editing a deck and running simulation models.  It also assumes that the engineer has performed all of the normal due diligence.  The PVT and relative permeability have been adequately characterized, along with appropriate uncertainties.  Some ideas of how permeability and porosity vary with geology are envisioned.  Significant upfront time should be spent trying to characterize as many of the uncertainties as possible.  Conceptually from a reproducible research point of view, all of this work should be included and documented in the project directories, but tools to help with this have not yet been developed.
+
+Despite this effort at preparation, during history matching, both ranges of uncertainty and the variables of concern will change.  The work process must be flexible enough to add and subtract variables, and change uncertainty ranges and distributions.
+
+The history match general workflow is:
+
+1. Create a history data file for comparison with simulation runs.
+2. Create a deck template defining the variables one wishes to change during the history match process
+3. Generate a suitable experimental design
+4. Generate decks, runs models, and retrieve results
+5. Analyze results and modify the experimental design to try to improve the results.  This is where the creativity is required, and where existing tools in R can be very helpful.
+6. Rinse and repeat.
+
+### History Data
+The history data needs to be in a "long" format comparable to that created with the ***eclsum*** function.  The ***importhist*** function will read a column oriented "wide" format csv or Excel file, and add it to the project file for later use.
+
+The history data needs to be on the same dates as the simulation model output.  Future enhancements will implement some interpolation to ease this requirement somewhat, but it still is a good idea.  This version of the workflow only deals with data measured at the well.  Future efforts will attempt to incorporate 4D type data.
+
+### Variable Definition
+A simulation deck, suitably modified to include design variables, is called a deck template.  The modification  involves replacing portions of the deck with a variable that may be used to substitute in variations for exploring of the form *{$xperm}*
+
+### Experimental Design
+Experimental design for a computer model is significantly different from that for a physical experiment.  For example, repetitions serve no purpose, as the computer will always give the same result with the same input (hopefully). A great deal has been written about experimental design for computer models.***(add references here)***  This module will use the tools from the ***DiceDesign*** package, which includes a fairly comprehensive set of methods.  Unfortunately, DiceDesign doesn't give much advice about which method to select, or why.  The vignette *ED_Tools* explains the defaults chosen for use in this module.
+
+### Create, Run, and Retrieve  
+Blah, blah, blah.
+
+### Analyze the Runs
+Yada, yada, yada.
+
+## History Matching Example
+Unfortunately, publicly available history matching data sets are difficult to come by, especially if one is not associated with a university, e.g. [Norne](http://www.ipt.ntnu.no/~norne/wiki/data/media/english/Norne_License_Agreement_2016.pdf).  Until I can find a suitable data set, I will create an entirely synthetic simple data set based on [SPE9](http://www.ipt.ntnu.no/~kleppe/pub/SPE-COMPARATIVE/papers/ninth.pdf).  The model has ~9000 cells with a geostatistically derived permeability distribution, one injector, 25 producers and 900 days of history.  It will be assumed that the model as given provides the correct "history".  A set of geologic regions will be created using the porosity and permeability.  These regions will be assigned an incorrect average permeabilty, and the history matching process will try to match production by adjusting region permeability.
+
+

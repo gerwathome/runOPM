@@ -1,20 +1,23 @@
+# to keep CRAN happy with ggplot
+globalVariables(c("DATE", "VALUE", "CASENAME"))
+
 #------------------------------------------------------------------------------
 #' @title Create an individual plot for each name(WELL/FIELD/GROUP) and keyword, with multiple cases on each plot.
-#' @description This function accepts a long dataframe as input, and creates plots using ggplot
-#' @param long A long format summary dataframe, not the csv file stored with each simulation case output.  This may be either the output of the eclsum function, or the file "REPORTS/PROJSUM.csv".
+#' @description This function accepts a long format dataframe as input, and creates plots using ggplot
+#' @param longdata A long format summary dataframe, not the csv file stored with each simulation case output.  This may be either the output of the eclsum function, or the file "REPORTS/PROJSUM.csv".
 #' @param casenames A list with casenames to be plotted.  Default is all casenames in the dataframe.
 #' @param wgnames A list with well/group/filed names to be plotted.  Default is all WELL/FIELD/GROUP names in the dataframe.
 #' @param keywords A list with parameters to be plotted, e.g. "WOPR".  Default is all keywords in the dataframe.
 #' @param ncolumns How many columns of plots to display.  The default is a display 3 columns wide, with as many rows as necessary to plot all of the desired plots.
 #' @details The intent of this function is to compare multiple runs (i.e. "cases") on the same plot.  With too many cases, the plot will quickly become illegible, so a reasonable selection should be made.
 #' @export
-ploteach <- function(long,
+ploteach <- function(longdata,
                      casenames = NULL,
                      wgnames = NULL,
                      keywords = NULL,
                      ncolumns = 3){
   # all of the combinations of case, well and parameter with data
-  vldf <- .uniquevars(long)
+  vldf <- .uniquevars(longdata)
   df <- vldf[0,]
   # filter down to selected cases
   if(!is.null(casenames)){
@@ -48,12 +51,12 @@ ploteach <- function(long,
   }
   nc <- ncolumns
   nr <- ceiling(np / nc)
-  op <- par(mfrow = c(as.integer(nr),as.integer(nc)))
+  op <- graphics::par(mfrow = c(as.integer(nr),as.integer(nc)))
   # plot the selected data by well and parameter, colored by case
   for(i in 1:np){
-    filt <-vldf$WGNAME[i] == long$WGNAME &
-      vldf$KEYWORD[i] == long$KEYWORD
-    plotdf <- long[filt,]
+    filt <-vldf$WGNAME[i] == longdata$WGNAME &
+      vldf$KEYWORD[i] == longdata$KEYWORD
+    plotdf <- longdata[filt,]
     n <- vldf$WGNAME[i]
     k <- vldf$KEYWORD[i]
     lead <- "Well:  "
@@ -87,11 +90,13 @@ ploteach <- function(long,
     )
     print(ggp)
   }
-  par(op)
+  graphics::par(op)
 }
 #------------------------------------------------------------------------------
-.uniquevars <- function(long){
-  vl <- unique(paste(long$CASENAME,long$WGNAME,long$KEYWORD,sep=":"))
+.uniquevars <- function(longdata){
+  vl <- unique(paste(longdata$CASENAME,
+                     longdata$WGNAME,
+                     longdata$KEYWORD,sep=":"))
   vldf <- as.data.frame(t(as.data.frame(strsplit(vl,":"))),
                         stringsAsFactors = FALSE)
   rownames(vldf) <- NULL

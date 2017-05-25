@@ -7,7 +7,7 @@
 makeproj(deckname = NULL, basedir = ".")
 }
 \arguments{
-\item{deckname}{The full path to, and name of, a simulation deck.  The default is a deck from the first SPE comparative solution project.  This could also be a deck template that will later be used to generate multiple case decks.}
+\item{deckname}{The full path to, and name of, a simulation deck.  The default is no deck.  This could also be a deck template that will later be used to generate multiple case decks.}
 
 \item{basedir}{is the base directory of the simulation project.  The default is the current directory.  In general, it is not a good idea to use the current directory, as it may lead to confusion or overwriting of files.  If a string is supplied to the basedir argument, a subdirectory of the current directory will be created as the project directory.}
 }

@@ -4,11 +4,11 @@
 \alias{ploteach}
 \title{Create an individual plot for each name(WELL/FIELD/GROUP) and keyword, with multiple cases on each plot.}
 \usage{
-ploteach(long, casenames = NULL, wgnames = NULL, keywords = NULL,
+ploteach(longdata, casenames = NULL, wgnames = NULL, keywords = NULL,
   ncolumns = 3)
 }
 \arguments{
-\item{long}{A long format summary dataframe, not the csv file stored with each simulation case output.  This may be either the output of the eclsum function, or the file "REPORTS/PROJSUM.csv".}
+\item{longdata}{A long format summary dataframe, not the csv file stored with each simulation case output.  This may be either the output of the eclsum function, or the file "REPORTS/PROJSUM.csv".}
 
 \item{casenames}{A list with casenames to be plotted.  Default is all casenames in the dataframe.}
 
@@ -19,7 +19,7 @@ ploteach(long, casenames = NULL, wgnames = NULL, keywords = NULL,
 \item{ncolumns}{How many columns of plots to display.  The default is a display 3 columns wide, with as many rows as necessary to plot all of the desired plots.}
 }
 \description{
-This function accepts a long dataframe as input, and creates plots using ggplot
+This function accepts a long format dataframe as input, and creates plots using ggplot
 }
 \details{
 The intent of this function is to compare multiple runs (i.e. "cases") on the same plot.  With too many cases, the plot will quickly become illegible, so a reasonable selection should be made.

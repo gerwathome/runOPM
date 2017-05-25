@@ -1,7 +1,7 @@
 # runOPM
 [OPM](http://opm-project.org/) (The Open Porous Media initiative) is a group developing a set of open source tools that allow the scale-up and modeling of fluid flow in subsurface reservoirs.  The tools being developed use the industry standard Eclipse data format for input and output.  OPM is sponsered by a number of Norwegian organizations, including [IRIS](http://www.iris.no/research/energy), [Sintef](http://www.sintef.no/en/information-and-communication-technology-ict/applied-mathematics/computational-geoscience/#/) and [Statoil](https://www.statoil.com/).
 
-This module, along with other associated modules, is an attempt to develop a history match workflow that combines the use of the OPM tools with tools already existing in R. Particular effort is made to incorporate the excellent set of tools developed by the [DICE](http://dice.emse.fr/) and [ReDICE](http://www.redice-project.org/) consortia to improve complex computer models.
+This module, along with other associated modules, is an attempt to develop a history match workflow that combines the use of the OPM tools with tools already existing in R. Particular effort is made to incorporate the excellent set of tools developed by the [DICE](http://dice.emse.fr/) and [ReDICE](http://www.redice-project.org/) consortia to improve understanding of complex computer models.
 
 While the current work is at a very early stage, any comments or suggestions are certainly welcome.
 
