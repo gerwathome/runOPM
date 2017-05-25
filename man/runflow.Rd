@@ -4,8 +4,9 @@
 \alias{runflow}
 \title{Run an Open Porous Media reservoir simulation}
 \usage{
-runflow(deckname, basedir = ".", sim_exec = "flow", restart = FALSE,
-  sim_version = "stable", queue = "background", wait = FALSE)
+runflow(deckname, basedir = ".", sim_exec = "flow", restartcase = NULL,
+  sim_version = "stable", queue = "background", overwrite = NULL,
+  wait = FALSE)
 }
 \arguments{
 \item{deckname}{The name and full path to an Eclipse style simulation input deck}
@@ -14,11 +15,13 @@ runflow(deckname, basedir = ".", sim_exec = "flow", restart = FALSE,
 
 \item{sim_exec}{one of ("flow", "flow_mpi", "flow_polymer", "flow_sequential", "flow_solvent")}
 
-\item{restart}{Is this a restart run? (assumes FALSE)}
+\item{restartcase}{The base name of the deck that this is a restart from.  The output will be put into the base directory.  The default is NULL.}
 
 \item{sim_version}{one of c("stable", "latest")}
 
 \item{queue}{one of c("background", "PBS_queue_name", "AWS").  Currently only "background" is functional.}
+
+\item{overwrite}{is a logical with a default of NULL. TRUE will always run the case. FALSE will only run the case if the .UNSMRY does not exist.  NULL will run the case if the deck (.DATA) file is newer than the .UNSMRY file.}
 
 \item{wait}{A logical indicating whether to wait for the model to finish before proceeding.  The default is FALSE, i.e. to run models asynchronously.}
 }
@@ -30,8 +33,6 @@ This function deals with the details of running a reservoir simulation model.  O
 }
 \details{
 A subdirectory of the the outdir with the base name of the input deck will be created, keeping each simulation run in its own directory.
-
-Restarts probably need to be thought out a little better, and may not work at all, yet.
 
 The stable executable is assumed to be in /usr/bin and the latest version in /usr/bin/local.  This is consistent with "stable" being the version installed from binaries and "latest" being compiled locally on a Ubuntu machine.
 

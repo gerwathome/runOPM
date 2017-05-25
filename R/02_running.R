@@ -3,13 +3,12 @@
 #' @param deckname The name and full path to an Eclipse style simulation input deck
 #' @param basedir The base directory of a simulation project, assumed to be the current directory.  If a project directory structure does not exist, one will be created.
 #' @param sim_exec one of ("flow", "flow_mpi", "flow_polymer", "flow_sequential", "flow_solvent")
-#' @param restart Is this a restart run? (assumes FALSE)
+#' @param restartcase The base name of the deck that this is a restart from.  The output will be put into the base directory.  The default is NULL.
 #' @param sim_version one of c("stable", "latest")
 #' @param queue one of c("background", "PBS_queue_name", "AWS").  Currently only "background" is functional.
+#' @param overwrite is a logical with a default of NULL. TRUE will always run the case. FALSE will only run the case if the .UNSMRY does not exist.  NULL will run the case if the deck (.DATA) file is newer than the .UNSMRY file.
 #' @param wait A logical indicating whether to wait for the model to finish before proceeding.  The default is FALSE, i.e. to run models asynchronously.
 #' @details A subdirectory of the the outdir with the base name of the input deck will be created, keeping each simulation run in its own directory.
-#'
-#' Restarts probably need to be thought out a little better, and may not work at all, yet.
 #'
 #' The stable executable is assumed to be in /usr/bin and the latest version in /usr/bin/local.  This is consistent with "stable" being the version installed from binaries and "latest" being compiled locally on a Ubuntu machine.
 #'
@@ -26,9 +25,10 @@
 runflow <- function(deckname,
                     basedir=".",
                     sim_exec="flow",
-                    restart=FALSE,
+                    restartcase=NULL,
                     sim_version = "stable",
                     queue = "background",
+                    overwrite = NULL,
                     wait= FALSE){
   if(!file.exists(deckname)){
     stop("Please provide a simulation deck to run.")
@@ -51,6 +51,8 @@ runflow <- function(deckname,
   # This creates the output directory for this run
   casename <- sub("[.][^.]*$", "", casename, perl=TRUE)
   output_dir <- file.path(basedir, "OUTPUT", casename)
+  if(!is.null(restartcase)){output_dir <- file.path(basedir, "OUTPUT",
+                                                    restartcase)}
   if(!dir.exists(output_dir)){
     ok <- dir.create(output_dir, showWarnings = FALSE)
     if(!ok){stop("Failed to create output directory.")}
@@ -60,9 +62,44 @@ runflow <- function(deckname,
   exec <- paste0(exec_path, sim_exec)
   if(!file.exists(exec)){stop("Failed to locate the desired executable.")}
 
-  if(!restart){
-    old <- list.files(output_dir,full.names = TRUE)
+  # get the timestamp of the deck and unsmry files for overwrite testing
+  deckts <- file.mtime(todeck)
+  # tosmry should only have one file, but it is possible multiple runs may
+  # have different file formats; pick the newest
+  tosmry <- suppressWarnings(.findSummary(basedir = output_dir,
+                                          casename = casename,
+                                          recursive = FALSE))
+  if(length(tosmry > 1)){
+    tsold <- 0
+    fnold <- ""
+    for(fn in tosmry){
+      ts <- file.mtime(fn)
+      if(ts > tsold){
+        tsold <- ts
+        fnold <- fn
+      } # end if
+    } # end for
+    tosmry <- fnold
+  } # end tosmry > 1
+  smryts <- 0
+  if(length(tosmry) > 0){
+    smryts <-file.mtime(tosmry)
+  }
+  casepattern <- paste0(casename,"\\..+")
+  old <- list.files(path = output_dir,
+                    pattern = casepattern,
+                    full.names = TRUE)
+  if(is.null(overwrite)){
+    if(deckts > smryts){
+      file.remove(old)
+    }else{
+      return(warning("Case not run because existing summary is newer than input deck."))
+    }
+
+  }else if(overwrite){
     file.remove(old)
+  }else if(length(tosmry) > 0){
+    return(warning("Case not run to avoid overwriting previous results."))
   }
   args <- c(deck, paste0("output_dir=", output_dir))
   sout <- paste0(casename,".OUT")

@@ -22,44 +22,46 @@ eclsum <- function(casename = "^.+", basedir="."){
     stringsAsFactors=FALSE)
   projsum <- file.path(basedir,"REPORTS","PROJSUM.csv")
   if(file.exists(projsum)){long <- readr::read_csv(projsum,
-                                         col_types = readr::cols())}
-  for(infile in sumfiles){
-    case <- basename(infile)
-    case <- sub("[.][^.]*$", "", case, perl=TRUE)
-    dupcase <- long$CASENAME == case
-    long <- long[!dupcase,]
-    outfile <- file.path(basedir, "OUTPUT", case, paste0(case,".csv"))
-    rPython::python.exec("import sys")
-    rPython::python.exec("import ert.ecl.ecl as ecl")
-    rPython::python.assign("case",case)
-    rPython::python.assign("infile",infile)
-    rPython::python.assign("outfile",outfile)
-    # the python structure is too complex to read in directly with RJSONIO
-    try_err <- try(rPython::python.exec("sum_data = ecl.EclSum(infile)"),
-                   silent=TRUE)
-    # Using ; as a seperator is important here, as some of the keys have commas
-    # in them
-    if(is.null(try_err)){
-      rPython::python.exec("sum_data.exportCSV(outfile, date_format='%d-%b-%Y',
+                                                   col_types = readr::cols())}
+  if(length(sumfiles) > 0)(
+    for(infile in sumfiles){
+      case <- basename(infile)
+      case <- sub("[.][^.]*$", "", case, perl=TRUE)
+      dupcase <- long$CASENAME == case
+      long <- long[!dupcase,]
+      outfile <- file.path(basedir, "OUTPUT", case, paste0(case,".csv"))
+      rPython::python.exec("import sys")
+      rPython::python.exec("import ert.ecl.ecl as ecl")
+      rPython::python.assign("case",case)
+      rPython::python.assign("infile",infile)
+      rPython::python.assign("outfile",outfile)
+      # the python structure is too complex to read in directly with RJSONIO
+      try_err <- try(rPython::python.exec("sum_data = ecl.EclSum(infile)"),
+                     silent=TRUE)
+      # Using ; as a seperator is important here, as some of the keys have commas
+      # in them
+      if(is.null(try_err)){
+        rPython::python.exec("sum_data.exportCSV(outfile, date_format='%d-%b-%Y',
                            sep=';')")
-      rPython::python.assign("sum_data","None")
-      wide.raw <- utils::read.csv(file=outfile, sep = ";",
-                                 stringsAsFactors = FALSE)
-      wide <- wide.raw[, colSums(wide.raw != 0, na.rm = TRUE) > 0]
-      grep("F(...)", colnames(wide), perl=TRUE)
-      colnames(wide) <- sub("F(...)", "W\\1.FIELD", colnames(wide), perl=TRUE)
-      inxyzpat <- "(\\d+)\\.(\\d+)\\.(\\d+)"
-      outxyzpat <- "\\1_\\2_\\3"
-      colnames(wide) <- gsub(inxyzpat, outxyzpat, colnames(wide), perl=TRUE)
-      wide$DATE <- as.Date(wide$DATE, "%d-%b-%Y")
-      wide <- data.frame(CASE=rep(case,length(wide$DATE)),wide)
-      wide <- .add_wor(wide)
-#      wide <- .add_gor(wide)
-      long <- rbind(long, .wide2long(wide))
-      readr::write_csv(long, projsum)
-      return(long)
-    }else{warning("Failed to parse ", infile)}
-  }
+        rPython::python.assign("sum_data","None")
+        wide.raw <- utils::read.csv(file=outfile, sep = ";",
+                                    stringsAsFactors = FALSE)
+        wide <- wide.raw[, colSums(wide.raw != 0, na.rm = TRUE) > 0]
+        grep("F(...)", colnames(wide), perl=TRUE)
+        colnames(wide) <- sub("F(...)", "W\\1.FIELD", colnames(wide), perl=TRUE)
+        inxyzpat <- "(\\d+)\\.(\\d+)\\.(\\d+)"
+        outxyzpat <- "\\1_\\2_\\3"
+        colnames(wide) <- gsub(inxyzpat, outxyzpat, colnames(wide), perl=TRUE)
+        wide$DATE <- as.Date(wide$DATE, "%d-%b-%Y")
+        wide <- data.frame(CASE=rep(case,length(wide$DATE)),wide)
+        wide <- .add_wor(wide)
+        #      wide <- .add_gor(wide)
+        long <- rbind(long, .wide2long(wide))
+        readr::write_csv(long, projsum)
+        return(long)
+      }else{warning("Failed to parse ", infile)}
+    } # end for loop
+  ) # end if sumfiles > 0
   return(long)
 }
 #------------------------------------------------------------------------------
@@ -134,9 +136,9 @@ eclsum <- function(casename = "^.+", basedir="."){
                          casename = casename,
                          ext = ext,
                          recursive = recursive)
-  if(length(sumfiles) < 1){stop(paste0("Failed to locate Eclipse style summary",
-                                       " output files.  Did the run ", casename,
-                                       " complete properly?"))}
+  if(length(sumfiles) < 1){warning(paste0("Failed to locate Eclipse style",
+                                          " summary output files. Did the run ",
+                                          casename,  " complete properly?"))}
   return(sumfiles)
 }
 #------------------------------------------------------------------------------
