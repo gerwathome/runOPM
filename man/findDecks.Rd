@@ -4,8 +4,8 @@
 \alias{findDecks}
 \title{Find a set of Eclipse style input data decks}
 \usage{
-findDecks(basedir = NULL, casename = "^.+", ext = c(".data", ".DATA"),
-  recursive = TRUE)
+findDecks(basedir = NULL, casename = "^.+", ext = c("\\\\.data$",
+  "\\\\.DATA$"), recursive = TRUE)
 }
 \arguments{
 \item{basedir}{The path to the base directory of a simulation project.  The default is the current directory.}

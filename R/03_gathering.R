@@ -111,9 +111,9 @@ eclsum <- function(casename = "^.+", basedir="."){
 #' @return The function returns a list of .DATA files with the full path.
 #' @export
 findDecks <- function(basedir = NULL,
-                       casename = "^.+",
-                       ext = c(".data", ".DATA"),
-                       recursive = TRUE){
+                      casename = "^.+",
+                      ext = c("\\.data$", "\\.DATA$"),
+                      recursive = TRUE){
   if(is.null(basedir)){
     basedir <- getwd()
   }else{
@@ -123,13 +123,13 @@ findDecks <- function(basedir = NULL,
   for(pat in ext){
     pattern <- paste0(casename, pat)
     searchdirs <- list.dirs(path = basedir,
-                           full.names = TRUE,
-                           recursive = TRUE)
+                            full.names = TRUE,
+                            recursive = TRUE)
     searchdir <- searchdirs[grep(casename,searchdirs,perl=TRUE)]
     deckpath <-list.files(path=searchdir,
                           pattern=pattern,
                           full.names = TRUE,
-                          recursive=recursive,
+#                          recursive=recursive,
                           include.dirs=TRUE)
     decks <- c(decks, deckpath)
   }
@@ -147,9 +147,9 @@ findDecks <- function(basedir = NULL,
                          recursive = TRUE){
   ext <- c(".unsmry", ".UNSMRY", ".funsmry", ".FUNSMRY")
   sumfiles <- findDecks(basedir = basedir,
-                         casename = casename,
-                         ext = ext,
-                         recursive = recursive)
+                        casename = casename,
+                        ext = ext,
+                        recursive = recursive)
   if(length(sumfiles) < 1){warning(paste0("Failed to locate Eclipse style",
                                           " summary output files. Did the run ",
                                           casename,  " complete properly?"))}
