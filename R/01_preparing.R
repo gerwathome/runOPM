@@ -8,9 +8,6 @@
 #' @return Returns FALSE if any of the creation or copying tasks failed.
 #' @export
 makeproj <- function(deckname = NULL, basedir = "."){
-  if(is.null(deckname)){
-    deckname <- system.file("extdata", "SPE1_CASE1.DATA", package = "runOPM")
-  }
   if(!dir.exists(basedir)){
     dir.create(basedir, showWarnings = FALSE)
   }
