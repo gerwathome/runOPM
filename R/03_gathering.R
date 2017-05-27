@@ -102,18 +102,23 @@ eclsum <- function(casename = "^.+", basedir="."){
 }
 #------------------------------------------------------------------------------
 #' @title Find a set of Eclipse style input data decks
-#' @description This function converts Eclipse style xy type output to a csv file for later use.
+#' @description The function returns a list of .DATA files with the full path.
 #' @param basedir The path to the base directory of a simulation project.  The default is the current directory.
 #' @param casename The deck basename of an Eclipse style simulation summary output.  A perl style regular expression may be used to find multiple summary files.
 #' @param ext A list file extents used to create a search pattern.  Default is c(".data", ".DATA")
-#' @param recursive Should we look in the directories recursively.  Default is TRUE
+#' @param recursive Should we look in the directories recursively?  Default is TRUE.
 #' @details Default behavior to to search recursively in the basedir to find a list of ECl style input decks files.
 #' @return The function returns a list of .DATA files with the full path.
 #' @export
-findDecks <- function(basedir = ".",
+findDecks <- function(basedir = NULL,
                        casename = "^.+",
                        ext = c(".data", ".DATA"),
                        recursive = TRUE){
+  if(is.null(basedir)){
+    basedir <- getwd()
+  }else{
+    basedir <- normalizePath(basedir)
+  }
   decks <- character()
   for(pat in ext){
     pattern <- paste0(casename, pat)

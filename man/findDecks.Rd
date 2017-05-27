@@ -4,7 +4,7 @@
 \alias{findDecks}
 \title{Find a set of Eclipse style input data decks}
 \usage{
-findDecks(basedir = ".", casename = "^.+", ext = c(".data", ".DATA"),
+findDecks(basedir = NULL, casename = "^.+", ext = c(".data", ".DATA"),
   recursive = TRUE)
 }
 \arguments{
@@ -14,13 +14,13 @@ findDecks(basedir = ".", casename = "^.+", ext = c(".data", ".DATA"),
 
 \item{ext}{A list file extents used to create a search pattern.  Default is c(".data", ".DATA")}
 
-\item{recursive}{Should we look in the directories recursively.  Default is TRUE}
+\item{recursive}{Should we look in the directories recursively?  Default is TRUE.}
 }
 \value{
 The function returns a list of .DATA files with the full path.
 }
 \description{
-This function converts Eclipse style xy type output to a csv file for later use.
+The function returns a list of .DATA files with the full path.
 }
 \details{
 Default behavior to to search recursively in the basedir to find a list of ECl style input decks files.
