@@ -40,7 +40,7 @@ Only the "background" queue currently works.  Submission to a PBS queue is a sho
 
 It might be desirable to look at the deckname file to determine which executable is appropriate (i.e. which keywords are in the deck).
 
-As OPM simulators are not currently supported on Windows, this package is linux specific.
+This package is linux specific, at this point, becaue I don't havae a Windows or Mac machine to work out the kinks.
 }
 \references{
 \href{http://opm-project.org/}{The Open Porous Media initiative}
