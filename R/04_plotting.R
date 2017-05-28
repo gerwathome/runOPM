@@ -60,8 +60,8 @@ ploteach <- function(longdata,
     n <- vldf$WGNAME[i]
     k <- vldf$KEYWORD[i]
     lead <- "Well:  "
-    b1pat <- "\\d+"
-    b2pat <- "\\d+_\\d+_\\d+"
+    b1pat <- "^\\d+$"
+    b2pat <- "^\\d+_\\d+_\\d+$"
     fpat <- "FIELD"
     if(any(grep(b1pat,n,perl=TRUE)) |
        any(grep(b2pat,n,perl=TRUE))){lead <- "Block:  "}
