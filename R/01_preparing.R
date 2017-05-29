@@ -11,6 +11,7 @@ makeproj <- function(deckname = NULL, basedir = "."){
   ok1 <- ok2 <- ok3 <- ok4 <- ok5 <- TRUE
   if(!dir.exists(basedir)){
     ok1 <- dir.create(basedir)
+<<<<<<< HEAD
   }
   if(!dir.exists(file.path(basedir, "DECKS"))){
     ok2 <- dir.create(file.path(basedir, "DECKS"))
@@ -26,6 +27,21 @@ makeproj <- function(deckname = NULL, basedir = "."){
   if(!dir.exists(file.path(basedir, "REPORTS"))){
     ok5 <- dir.create(file.path(basedir, "REPORTS"))
   }
+=======
+  }
+  if(!dir.exists(file.path(basedir, "DECKS"))){
+    ok2 <- dir.create(file.path(basedir, "DECKS"))
+  }
+  if(!is.null(deckname) & file.exists(deckname)){
+    ok3 <- file.copy(deckname, file.path(basedir, "DECKS"))
+  }
+  if(!dir.exists(file.path(basedir, "OUTPUT"))){
+    ok4 <- dir.create(file.path(basedir, "OUTPUT"))
+  }
+  if(!dir.exists(file.path(basedir, "REPORTS"))){
+    ok5 <- dir.create(file.path(basedir, "REPORTS"))
+  }
+>>>>>>> 2863d5a6ff2d069e28eb49012580ccd643bf0c8f
   ok <- all(c(ok1, ok2, ok3, ok4, ok5))
   return(ok)
 }
