@@ -19,3 +19,5 @@ Suggests: knitr,
     rmarkdown,
     testthat
 VignetteBuilder: knitr
+OS_type: unix
+SystemRequirements: OPM simulation tools 'http://opm-project.org/?page_id=36'
