@@ -8,16 +8,22 @@
 #' @return Returns FALSE if any of the creation or copying tasks failed.
 #' @export
 makeproj <- function(deckname = NULL, basedir = "."){
+  ok1 <- ok2 <- ok3 <- ok4 <- ok5 <- TRUE
   if(!dir.exists(basedir)){
-    dir.create(basedir, showWarnings = FALSE)
+    ok1 <- dir.create(basedir)
   }
-  ok1 <- dir.create(file.path(basedir, "DECKS"), showWarnings = FALSE)
-  ok2 <- TRUE
-  if(!is.null(deckname)){
-    ok2 <- file.copy(deckname, file.path(basedir, "DECKS"))
+  if(!dir.exists(file.path(basedir, "DECKS"))){
+    ok2 <- dir.create(file.path(basedir, "DECKS"))
   }
-  ok3 <- dir.create(file.path(basedir, "OUTPUT"), showWarnings = FALSE)
-  ok4 <- dir.create(file.path(basedir, "REPORTS"), showWarnings = FALSE)
-  ok <- all(c(ok1, ok2, ok3, ok4))
+  if(!is.null(deckname) & file.exists(deckname)){
+    ok3 <- file.copy(deckname, file.path(basedir, "DECKS"))
+  }
+  if(!dir.exists(file.path(basedir, "OUTPUT"))){
+    ok4 <- dir.create(file.path(basedir, "OUTPUT"))
+  }
+  if(!dir.exists(file.path(basedir, "REPORTS"))){
+    ok5 <- dir.create(file.path(basedir, "REPORTS"))
+  }
+  ok <- all(c(ok1, ok2, ok3, ok4, ok5))
   return(ok)
 }
