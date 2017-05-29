@@ -151,8 +151,10 @@ findDecks <- function(basedir = NULL,
                         ext = ext,
                         recursive = recursive)
   if(length(sumfiles) < 1){warning(paste0("Failed to locate Eclipse style",
-                                          " summary output files. Did the run ",
-                                          casename,  " complete properly?"))}
+                                          " summary output files. Did the ",
+                                          "run '", casename,  "' complete ",
+                                          " properly?"))
+  }
   return(sumfiles)
 }
 #------------------------------------------------------------------------------
