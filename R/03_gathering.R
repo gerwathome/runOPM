@@ -109,8 +109,7 @@ eclsum <- function(casename = "^.+", basedir="."){
 #' @param recursive Should we look in the directories recursively?  Default is TRUE.
 #' @details Default behavior to to search recursively in the basedir to find a list of ECl style input decks files.
 #' @return The function returns a list of .DATA files with the full path.
-#' @export
-findDecks <- function(basedir = NULL,
+.findDecks <- function(basedir = NULL,
                       casename = "^.+",
                       ext = c("\\.data$", "\\.DATA$"),
                       recursive = TRUE){
@@ -146,7 +145,7 @@ findDecks <- function(basedir = NULL,
                          casename = "^.+",
                          recursive = TRUE){
   ext <- c(".unsmry", ".UNSMRY", ".funsmry", ".FUNSMRY")
-  sumfiles <- findDecks(basedir = basedir,
+  sumfiles <- .findDecks(basedir = basedir,
                         casename = casename,
                         ext = ext,
                         recursive = recursive)
