@@ -206,7 +206,7 @@ eclsum <- function(casename = "^.+", basedir="."){
 #------------------------------------------------------------------------------
 # functionality to check deck for units type needs to be tested
 # still nned to see what the Metric units are
-.kw2units <- function(keyword,type="FIELD", deck=NULL){
+.kw2units <- function(keyword, type="FIELD", deck=NULL){
   if(!is.null(deck)){type <- .findUnitType(deck)}
   unitsF <- switch(keyword,
                    "WOPR" = "STBD",      # Oil Prod Rate
@@ -286,8 +286,17 @@ eclsum <- function(casename = "^.+", basedir="."){
   return(descrip)
 }
 #------------------------------------------------------------------------------
+# the ... is to pass a type or deck argument to .kw2units
 .kw2label <- function(keyword, ...){
   label <- paste0(.kw2descrip(keyword), ", ", .kw2units(keyword))
   return(label)
+}
+#------------------------------------------------------------------------------
+.wgn_kw2title <- function(wgn, keyword){
+  beg <- wgn
+  end <- .kw2descrip(keyword)
+  if(identical(end,"Unknown Parameter")){end <- keyword}
+  title <- paste0(beg, ":  ", end)
+  return(title)
 }
 #------------------------------------------------------------------------------

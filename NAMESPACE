@@ -3,4 +3,5 @@
 export(eclsum)
 export(makeproj)
 export(ploteach)
+export(readDeck)
 export(runflow)

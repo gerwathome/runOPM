@@ -66,7 +66,7 @@ ploteach <- function(longdata,
     if(any(grep(b1pat,n,perl=TRUE)) |
        any(grep(b2pat,n,perl=TRUE))){lead <- "Block:  "}
     if(any(grep(fpat,n,perl=TRUE))){lead <- ""}
-    title <- paste0(lead,n,":",k)
+    title <- .wgn_kw2title(wgn = n, keyword = k)
     ggp <- ggplot2::ggplot(data=plotdf,
                            ggplot2::aes(x=DATE, y= VALUE, color = CASENAME))
     ggp <- ggp + ggplot2::geom_line()

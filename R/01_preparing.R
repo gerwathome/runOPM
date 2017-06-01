@@ -29,3 +29,20 @@ makeproj <- function(deckname = NULL, basedir = "."){
   ok <- all(c(ok1, ok2, ok3, ok4, ok5))
   return(ok)
 }
+
+#' @title Read in in data deck
+#' @description This function reads selected data from a data deck into R
+#' @param deckname The full path to, and name of, a simulation deck.  There is no default, and the function will faile without an input deck.
+#' @param kw is the name of the property that one wishes to retrieve.
+#' @details The current version of this function is very simple, and will read only a very limited selection of grid data.
+#' @return Returns a data frame with the desired data.
+#' @export
+readDeck <- function(deckname = NULL, kw = "PORO"){
+  dbg <- TRUE
+  if(dbg){deckname <- system.file("extdata", "SPE1_CASE1.DATA",
+                                  package = "runOPM")}
+  dk <- readLines(deckname)
+  dump <- grepl("^--.+|^\\s*$", dk, perl = TRUE)
+  dkc <- dk[!dump]
+  return("Function not working, yet")
+}
