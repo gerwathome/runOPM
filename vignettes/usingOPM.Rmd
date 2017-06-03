@@ -96,7 +96,7 @@ Selection of the appropriate model uncertainties is of paramount importance.  Th
 
 The first experimental design should be something that looks at the extreme values, with some level of internal filling.  When examining the results from the first set of runs, one should ensure that the desired range of outcomes have been captured.  For example, the range of results for the watercut of a well of interest must be both above and below the historical watercut.  If it isn't, then one must either add more variables, or expand the range of uncertainty of the existing variables.  This is why it is important that the early "variable selection" runs include the extreme values.
 
-Adding internal points is important because some of the analytic methods for assessing which variables are most important don't work very well with only extreme values.
+Adding internal points is important because some of the analytic methods for assessing which variables are most important don't work very well with only extreme values.  This is not scientific or documented, as far as I can see, but based on personal experience.
 
 The "variable selection" strategy has two basic parts.  First, ensure that the desired outcomes have been bracketed. If not add variables or expand uncertainty ranges.  Second ensure that the variables selected are significantly affecting the outcome.  If not, drop the variable.  In complex models, one is often surprised which variables are the most useful.  Variable selection is probably the most difficult part of the modeling exercise.  After that, the issues are reduced to successive refining and interpolation.
 

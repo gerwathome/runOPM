@@ -14,4 +14,4 @@ This module may be installed from within R using Hadley Wickham's devtools packa
 	install.packages("devtools")
 	devtools::install_github("gerwathome/runOPM", build_vignettes = TRUE)
 
-The vignette "Using OPM" documents basic workflows, as well as things that I am thinking about as I try to develop this package.
+The vignette "Using OPM" documents basic workflows, as well as things that I am thinking about as I try to develop this package.  At this point it tends to be more aspirational than documentation of actual functionality.  This vignette is also available to examine [here](http://gerwathome.github.io/runOPM).
