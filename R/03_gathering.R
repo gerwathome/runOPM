@@ -38,11 +38,10 @@ eclsum <- function(casename = "^.+", basedir="."){
       # the python structure is too complex to read in directly with RJSONIO
       try_err <- try(rPython::python.exec("sum_data = ecl.EclSum(infile)"),
                      silent=TRUE)
-      # Using ; as a seperator is important here, as some of the keys have commas
-      # in them
+      # Using ; as a seperator is important here, as some of the keys have
+      #  commas in them
       if(is.null(try_err)){
-        rPython::python.exec("sum_data.exportCSV(outfile, date_format='%d-%b-%Y',
-                           sep=';')")
+        rPython::python.exec("sum_data.exportCSV(outfile,date_format='%d-%b-%Y',sep=';')")
         rPython::python.assign("sum_data","None")
         wide.raw <- utils::read.csv(file=outfile, sep = ";",
                                     stringsAsFactors = FALSE)

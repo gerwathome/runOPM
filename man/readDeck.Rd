@@ -4,12 +4,12 @@
 \alias{readDeck}
 \title{Read in in data deck}
 \usage{
-readDeck(deckname = NULL, kw = "PORO")
+readDeck(deckname = NULL, props = c("PORO"))
 }
 \arguments{
-\item{deckname}{The full path to, and name of, a simulation deck.  There is no default, and the function will faile without an input deck.}
+\item{deckname}{The full path to, and name of, a simulation deck.  There is no default, and the function will fail without an input deck.}
 
-\item{kw}{is the name of the property that one wishes to retrieve.}
+\item{props}{is a list of the names of the properties that one wishes to retrieve.}
 }
 \value{
 Returns a data frame with the desired data.
@@ -18,5 +18,5 @@ Returns a data frame with the desired data.
 This function reads selected data from a data deck into R
 }
 \details{
-The current version of this function is very simple, and will read only a very limited selection of grid data.
+The current version of this function is very simple, and will read only a very limited selection of grid data.  It does not understand windows of data or multiple occurances of a keyword, and return values are unpredictable in these cases.  It will follow up INCLUDE files and expand multiple values expressed with an intermediate "*".  It expects the number of cell values found to be equal to the product of the DIMENS values.
 }

@@ -7,7 +7,7 @@
 makeproj(deckname = NULL, basedir = ".")
 }
 \arguments{
-\item{deckname}{The full path to, and name of, a simulation deck.  The default is no deck.  This could also be a deck template that will later be used to generate multiple case decks.}
+\item{deckname}{The full path to, and name of, a simulation deck.  The default is no deck.  This could also be a deck dataveclate that will later be used to generate multiple case decks.}
 
 \item{basedir}{is the base directory of the simulation project.  The default is the current directory.  In general, it is not a good idea to use the current directory, as it may lead to confusion or overwriting of files.  If a string is supplied to the basedir argument, a subdirectory of the current directory will be created as the project directory.}
 }
@@ -18,7 +18,7 @@ Returns FALSE if any of the creation or copying tasks failed.
 This function sets up a standard directory structure for running one or more simulation cases.
 }
 \details{
-If the runflow function is called without an appropriate directory structure, this function is called to create one.  This function may also be called directly by the user, to create a directory structure with a deck template, rather than a runnable deck.
+If the runflow function is called without an appropriate directory structure, this function is called to create one.  This function may also be called directly by the user, to create a directory structure with a deck dataveclate, rather than a runnable deck.
 
-The directory structure includes three subdirectories of the basedir:  a DECKS directory where decks and deck templates are stored, an OUTPUT directory for simulation run output and a REPORTS directory for storing information concerning multiple runs.  When a model is run, the output will be placed in a subdirectory of the OUTPUT directory with the same name as the deck.
+The directory structure includes three subdirectories of the basedir:  a DECKS directory where decks and deck dataveclates are stored, an OUTPUT directory for simulation run output and a REPORTS directory for storing information concerning multiple runs.  When a model is run, the output will be placed in a subdirectory of the OUTPUT directory with the same name as the deck.
 }
