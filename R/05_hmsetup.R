@@ -12,7 +12,7 @@ readtemplate <- function(template = NULL, basedir="."){
   basedir <- normalizePath(basedir)
   decksdir <- file.path(basedir,"DECKS")
   tdp <- character()
-  if(!is.null){
+  if(!is.null(template)){
     if(file.exists(template)){
       tdp <- template
     }else if(file.exists(file.path(decksdir,template))){
