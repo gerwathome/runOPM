@@ -74,6 +74,12 @@ readDeck <- function(deckname = NULL, props = c("PORO")){
                                                      prop))}
     df[, prop] <- as.vector(cellvals)
   } # for prop
+  I <- 1:griddims[1]
+  J <- 1:griddims[2]
+  K <- 1:griddims[3]
+  ijk <- expand.grid(I,J,K)
+  colnames(ijk) <- c("I", "J", "K")
+  df <- cbind(ijk, df)
   return(df)
 } # end func
 
