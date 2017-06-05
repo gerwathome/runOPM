@@ -26,9 +26,9 @@ readtemplate <- function(template = NULL, basedir="."){
   td <- readLines(tdp)
   varpat <- "{\\$(\\w+)}"
   vars <- grep(varpat, td, value=TRUE, perl=TRUE)
-  if(dbg){vars}
+  if(dbg){print(vars)}
   vars <- gsub(varpat, "\\1", vars, perl=TRUE)
-  if(dbg){vars}
+  if(dbg){print(vars)}
   to <- "I need to learn how to define an object"
   return(to)
 } # end function
