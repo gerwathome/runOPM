@@ -1,6 +1,6 @@
 #' @title Read an Eclipse style summary file into R and save it as csv file
 #' @description This function converts Eclipse style xy type output to a csv file for later use.
-#' @param casename The deck basename of an Eclipse style simulation summary output.  A perl style regular expression may be used to find multiple summary files.  Default behavior to to search recursively in the basedir to find a list of summary files.
+#' @param casename The deck basename of an Eclipse style simulation summary output.  A perl style regular expression may be used to find multiple summary files.  Default behavior is to search recursively in the basedir to find a list of summary files.
 #' @param basedir The path to the base directory of a simulation project.  The default is the current directory.
 #' @details The ability to parse the summary files resides in libecl, created by Statoil for use in their Ensemble Reservoir Tool.  This function currently uses the Python wrappers available for libecl, because I haven't yet learned how to use the library directly.
 #' @return The function writes out a csv file for each input summary file, into  the appropriate simulation run output directory.  It also appends the new summary data to a csv file with the combined results of all previous runs (in the REPORTS sub directory), and returns a dataframe with the combined summary data.  When the casename duplicates a casename from a previous combined results, the new case is substituted for the old case.

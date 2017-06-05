@@ -7,7 +7,7 @@
 eclsum(casename = "^.+", basedir = ".")
 }
 \arguments{
-\item{casename}{The deck basename of an Eclipse style simulation summary output.  A perl style regular expression may be used to find multiple summary files.  Default behavior to to search recursively in the basedir to find a list of summary files.}
+\item{casename}{The deck basename of an Eclipse style simulation summary output.  A perl style regular expression may be used to find multiple summary files.  Default behavior is to search recursively in the basedir to find a list of summary files.}
 
 \item{basedir}{The path to the base directory of a simulation project.  The default is the current directory.}
 }
