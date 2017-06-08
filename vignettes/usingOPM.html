@@ -12,7 +12,7 @@
 
 <meta name="author" content="George Williams" />
 
-<meta name="date" content="2017-06-05" />
+<meta name="date" content="2017-06-06" />
 
 <title>Using OPM</title>
 
@@ -70,7 +70,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 <h1 class="title toc-ignore">Using OPM</h1>
 <h4 class="author"><em>George Williams</em></h4>
-<h4 class="date"><em>2017-06-05</em></h4>
+<h4 class="date"><em>2017-06-06</em></h4>
 
 
 
@@ -85,7 +85,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 </div>
 <div id="first-things-first-run-a-simple-model" class="section level2">
 <h2>First Things First: Run a Simple Model</h2>
-<p>Obviously, the OPM tools must be installed. Detailed instructions are available at the <a href="http://opm-project.org/">OPM</a> website. The website explains how to install ‘stable’ binary versions of the tools. It also explains how to download, build and install the sources from GitHub. As the OPM tools are currently in a very rapid state of development, it may sometimes be desirable to download and build the latest versions, if functionality that you need has been recently added.</p>
+<p>Obviously, the OPM tools must be installed. Detailed instructions are available at the <a href="http://opm-project.org/">OPM</a> website. The website explains how to install ‘stable’ binary versions of the tools. It also explains how to download, build and install the sources from GitHub. As the OPM tools are currently in a very rapid state of development, it may sometimes be desirable to download and build the latest versions, if functionality that you need has been recently added. Note to self: the R package “nloptr” downloads, compiles and installs needed libraries. Consider this approach for the the necessary OPM/ERT tools.</p>
 <p>The functions for running and analyzing the simulation runs assume a consistent directory structure and file naming convention, even when running a “simple” model. A base or project directory will be defined for all runs. Within the base directory, there will be a DECKS directory, where all model decks will be stored. Underneath the DECKS directory will be a series of directories where include files may be stored. Some flexibility for include directories is acceptable, but one would expect GRID (static grid properties), PVT (fluid properties), RELPERM (relative permeability data), WELLS (well path and completion definition) and RECDAT (recurrent data such as producing rules and completion scheduling) directories. Flow tables (FLOT) should also have there own directory. Each directory may have multiple include file versions to capture ranges of uncertainty and various development scenarios.</p>
 <p>Within the base directory, and parallel to the decks directory, there will also be an OUTPUT directory and a REPORTS directory. The OUTPUT directory will have an individual directory for each simulation run, where all case specific files (except the deck) will be stored. The case directories will have the same name as the deck, without the deck suffix (either .data or .DATA). The REPORTS directory will include summary and analysis data that covers multiple cases.</p>
 <p>In history match or development scenario projects, it is expected that most of the case decks will be generated from a template deck (also stored in the DECKS directory). Using a template is important, as it allows easy tracking of how changes to the input deck influence changes in the simulation output. Each case name should have a base part and a variant part, separated by an underscore, “_“. The base part should indicate which template deck was used to generate the case.</p>

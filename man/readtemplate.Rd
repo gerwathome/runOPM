@@ -15,7 +15,7 @@ readtemplate(template = NULL, basedir = ".")
 Returns a template object, and writes out a template object file.
 }
 \description{
-This function reads the variables defined in a template deck, and sets up an object with assumed distribution types and parameters.
+This function reads the variables defined in a template deck, and sets up an object with assumed distribution types and parameters.  It is the constructor for the "hmvars" class.
 }
 \details{
 I'm thinking about it.
