@@ -49,7 +49,7 @@ readtemplate <- function(template = NULL, basedir="."){
                                  stringsAsFactors=FALSE
   ),
   expDesignCoded=data.frame(),
-  expDesignNatural=data.frame()
+  expDesignUncoded=data.frame()
   )
   class(hmvars) <- "hmvars"
   hmvars$vars$name <- varnames
@@ -115,12 +115,46 @@ expdes.hmvars <- function(obj=NULL, type = "pb", ... ){
                    "factor.names = factor.names)")
   pbed <- eval(parse(text = pbtext))
   foldtext <- "FrF2::fold.design(pbed)"
+  # design values are factors, with added descriptive columns
   fpbed <- eval(parse(text = foldtext))
+  fpbnames <- colnames(fpbed)
+  # this converts the design from factors to values, but changes the names
+  fpbed <- DoE.base::desnum(fpbed)
+  colnames(fpbed) <- fpbnames
+  # remove descriptive columns
+  fpbed <- fpbed[,factor.names]
   obj$expDesignCoded <- fpbed
+  # copy to uncoded for dimensions and column names
+  obj$expDesignUncoded <- fpbed
+  # calculate the uncoded values
+  for(var in obj$vars$name){
+    for(i in 1:length(obj$expDesignCoded[,1])){
+      c <- obj$expDesignCoded[i,var]
+      lu <- obj$vars$truncLow[obj$vars$name==var]
+      hu <- obj$vars$truncHigh[obj$vars$name==var]
+      obj$expDesignUncoded[i,var] <- .coded2uncoded(c, lu, hu)
+    }
+  }
   return(obj)
 }
 
+.coded2uncoded <- function(coded, lu, hu, lc=-1, hc=1){
+  # lu = low uncoded; hu = high uncoded
+  # lc = low coded; hc = high coded
+  m <- (hu - lu) / (hc - lc)
+  b <- lu - m * lc
+  uncoded <- m * coded + b
+  return(uncoded)
+}
 
+.uncoded2coded <- function(uncoded,lu, hu, lc=-1, hc=1){
+  # lu = low uncoded; hu = high uncoded
+  # lc = low coded; hc = high coded
+  m <- (hc - lc) / (hu - lu)
+  b <- lc - m * lu
+  uncoded <- m * coded + b
+  return(coded)
+}
 
 # testing during development
 dbg <- TRUE
@@ -135,10 +169,10 @@ if(dbg){
                       truncHigh = 2, param1 = 0.1, param2 = 2.0)
   spe9vars <- editvar(spe9vars, pattern = "PERM", truncLow = 0.1,
                       truncHigh = 1.5, param1 = 0.1, param2 = 2.0)
-  #spe9vars <- ed("pb")
   spe9vars <- expdes(spe9vars)
-  }
-if(ddbg){edit(spe9vars$vars)}
-if(ddbg){edit(spe9vars$expDesignCoded)}
+}
+if(ddbg){View(spe9vars$vars)}
+if(ddbg){View(spe9vars$expDesignCoded)}
+if(ddbg){View(spe9vars$expDesignUncoded)}
 
 
