@@ -1,0 +1,29 @@
+Package: runOPM
+Type: Package
+Title: Runs and Examines Reservoir Simulation Models with OPM
+Version: 0.1.0
+Author: George Williams
+Maintainer: George Williams <gerwathome@gmail.com>
+Description: OPM (The Open Porous Media initiative) has created a set of open source reservoir simulation tools.  This package is to allow the models to be run from, and the results imported into R.  This is part of an effort to build a computer aided history match environment in R.
+License: GPL-3
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 6.0.1
+Imports: ggplot2,
+    purrr,
+    purrrlyr,
+    readr,
+    utils,
+    rPython,
+    DiceDesign,
+    lhs,
+    FrF2,
+    truncdist,
+    minimaxdesign,
+    fOptions
+Suggests: knitr,
+    rmarkdown,
+    testthat
+VignetteBuilder: knitr
+OS_type: unix
+SystemRequirements: OPM simulation tools 'http://opm-project.org/?page_id=36'
