@@ -7,23 +7,25 @@
 #' The directory structure includes three subdirectories of the basedir:  a DECKS directory where decks and deck dataveclates are stored, an OUTPUT directory for simulation run output and a REPORTS directory for storing information concerning multiple runs.  When a model is run, the output will be placed in a subdirectory of the OUTPUT directory with the same name as the deck.
 #' @return Returns FALSE if any of the creation or copying tasks failed.
 #' @export
-makeproj <- function(deckname = NULL, basedir = "."){
+MakeProj <- function(deckname = NULL, basedir = "."){
   ok1 <- ok2 <- ok3 <- ok4 <- ok5 <- TRUE
-  if(!dir.exists(basedir)){
+  if (!dir.exists(basedir)) {
     ok1 <- dir.create(basedir)
   }
-  if(!dir.exists(file.path(basedir, "DECKS"))){
+  if (!dir.exists(file.path(basedir, "DECKS"))) {
     ok2 <- dir.create(file.path(basedir, "DECKS"))
   }
-  if(!is.null(deckname)){
-    if(file.exists(deckname)){
+  if (!is.null(deckname)) {
+    if (file.exists(deckname)) {
       ok3 <- file.copy(deckname, file.path(basedir, "DECKS"))
+    } else {
+      warning(paste0("Failed to find deck", deckname))
     }
   }
-  if(!dir.exists(file.path(basedir, "OUTPUT"))){
+  if (!dir.exists(file.path(basedir, "OUTPUT"))) {
     ok4 <- dir.create(file.path(basedir, "OUTPUT"))
   }
-  if(!dir.exists(file.path(basedir, "REPORTS"))){
+  if (!dir.exists(file.path(basedir, "REPORTS"))) {
     ok5 <- dir.create(file.path(basedir, "REPORTS"))
   }
   ok <- all(c(ok1, ok2, ok3, ok4, ok5))
@@ -37,42 +39,21 @@ makeproj <- function(deckname = NULL, basedir = "."){
 #' @details The current version of this function is very simple, and will read only a very limited selection of grid data.  It does not understand windows of data or multiple occurances of a keyword, and return values are unpredictable in these cases.  It will follow up INCLUDE files and expand multiple values expressed with an intermediate "*".  It expects the number of cell values found to be equal to the product of the DIMENS values.
 #' @return Returns a data frame with the desired data.
 #' @export
-readDeck <- function(deckname = NULL, props = c("PORO")){
-  dbg <- TRUE
-  ddbg <- FALSE
-  if(ddbg){
-    deckname <- system.file("extdata", "SPE9.DATA",
-                            package = "runOPM")
-    print(paste0("In debug mode.  Using deck:  ", deckname))
-    props = c("PORO", "PERMX")
-  }
-  if(!file.exists(deckname)){stop(paste("Failed to find deck", deckname))}
+ReadDeck <- function(deckname = NULL, props = c("PORO")){
+  if (!file.exists(deckname)) {stop(paste("Failed to find deck", deckname))}
   # the point of this function is to bring the include files into the deck
-  deckdatalines <- .getdecklines(deckname)
-  griddims <- as.numeric(.getdatavec("DIMENS", deckdatalines))
+  deckdatalines <- .GetDeckLines(deckname)
+  griddims <- as.numeric(.GetDataVec("DIMENS", deckdatalines))
   cellcount <- prod(griddims)
   propcount <- length(props)
   df <- data.frame(matrix(ncol = propcount, nrow = cellcount))
   colnames(df) <- props
-  for(prop in props){
-    datavec <- .getdatavec(prop, deckdatalines)
-    cellvals <- NULL
-    if(ddbg){print(paste("datavec =", datavec))}
-    for(i in 1:length(datavec)){
-      if(ddbg){print(paste0("datavec[", i,"] =", datavec[i]))}
-      if(any(grep("\\*", datavec[i], perl=TRUE))){
-        cellvals <- c(cellvals, .expandvals(datavec[i]))
-      }else{
-        cellvals <- c(cellvals, as.numeric(datavec[i]))
-      } # end if else
-    } # end for each in datavec
-    if(cellcount != length(cellvals)){warning(paste0("Cellcount is ",
-                                                     cellcount,
-                                                     ", but found only ",
-                                                     length(cellvals),
-                                                     "cell values for ",
-                                                     prop))}
-    df[, prop] <- as.vector(cellvals)
+  for (prop in props) {
+    datavec <- .GetDataVec(prop, deckdatalines)
+    if (cellcount != length(datavec)) {
+      warning(paste0("Cellcount is ", cellcount, ", but found only ",
+                     length(datavec), "cell values for ", prop))}
+    df[, prop] <- datavec
   } # for prop
   I <- 1:griddims[1]
   J <- 1:griddims[2]
@@ -83,33 +64,22 @@ readDeck <- function(deckname = NULL, props = c("PORO")){
   return(df)
 } # end func
 
-.expandvals <- function(multdata){
-  dbg <- TRUE
-  ddbg <- FALSE
-  if(ddbg){print(paste("multdata =", multdata))}
+.ExpandVals <- function(multdata){
   pat <- "(\\d+\\.*\\d*)\\*(\\d+\\.*\\d*)"
-  count <- as.numeric(sub(pat, "\\1", multdata, perl=TRUE))
-  if(ddbg){print(paste("count =", count))}
-  val <- as.numeric(sub(pat, "\\2", multdata, perl=TRUE))
-  if(ddbg){print(paste("val =", val))}
+  count <- as.numeric(sub(pat, "\\1", multdata, perl = TRUE))
+  val <- as.numeric(sub(pat, "\\2", multdata, perl = TRUE))
   cellvals <- try(rep(val, count))
-  if(ddbg){
-    print("cellvals:")
-    print(cellvals)
-  }
   return(cellvals)
 }
 
-.getdatavec <- function(prop, deckdatalines){
+.GetDataVec <- function(prop, deckdatalines){
   # this function assumes the include files have already been brought in
-  dbg <- TRUE
-  ddbg <- FALSE
   dump <- grepl("^--.+|^\\s*$", deckdatalines, perl = TRUE)
   deckdatalines <- deckdatalines[!dump]
-  slashlines <- grep("\\/",deckdatalines,perl=TRUE)
+  slashlines <- grep("\\/",deckdatalines, perl = TRUE)
   proppattern <- paste0("^", prop, "\\s*$")
-  proplines <- grep(proppattern, deckdatalines, perl=TRUE)
-  if(length(proplines) > 1){
+  proplines <- grep(proppattern, deckdatalines, perl = TRUE)
+  if (length(proplines) > 1) {
     print(paste0("Lines found with ", prop, ":"))
     print(proplines)
     warning(paste0("This function isn't smart enough to",
@@ -122,29 +92,34 @@ readDeck <- function(deckname = NULL, props = c("PORO")){
   # find the first slash after the property keyword
   endline <- slashlines[begline <= slashlines][1]
   datalines <- deckdatalines[begline:endline]
-  datalines <- gsub("^\\s*", "", datalines, perl=TRUE)
-  datalines <- gsub("\\s*$", "", datalines, perl=TRUE)
-  datalines <- gsub("\\s*\\/$", "", datalines, perl=TRUE)
-  datalines <- gsub("\\t", "", datalines, perl=TRUE)
+  datalines <- gsub("^\\s*", "", datalines, perl = TRUE)
+  datalines <- gsub("\\s*$", "", datalines, perl = TRUE)
+  datalines <- gsub("\\s*\\/$", "", datalines, perl = TRUE)
+  datalines <- gsub("\\t", "", datalines, perl = TRUE)
   datavec <- unlist(strsplit(datalines, "\\s+"))
-  if(ddbg){
-    print("datavec:")
-    print(datavec)
-  }
+  cellvals <- NULL
+  for (i in 1:length(datavec)) {
+    if (any(grep("\\*", datavec[i], perl = TRUE))) {
+      cellvals <- c(cellvals, .ExpandVals(datavec[i]))
+    }else{
+      cellvals <- c(cellvals, as.numeric(datavec[i]))
+    } # end if else
+  } # end for each in datavec
+
+  datavec <- as.vector(cellvals)
   return(datavec)
 }
 
-.getdecklines <- function(deckname){
+.GetDeckLines <- function(deckname){
   # the point of this function is to bring the include files into the deck
-  dbg <- TRUE
-  ddbg <- FALSE
   deckdatalines <- readLines(deckname, warn = FALSE)
   dirpath <- dirname(deckname)
-  includelines <- grep("INCLUDE",deckdatalines,perl=TRUE)
-  slashlines <- grep("\\/\\s*$",deckdatalines,perl=TRUE)
+  includelines <- grep("INCLUDE", deckdatalines, perl = TRUE)
+  if (!any(includelines)) {return(deckdatalines)}
+  slashlines <- grep("\\/\\s*$", deckdatalines, perl = TRUE)
   linesout <- vector()
   slashline <- NULL
-  for(i in 1:length(includelines)){
+  for (i in 1:length(includelines)) {
     includeline <- includelines[i]
     # the first line for this deck chunk starts right after the last slash
     begline <- ifelse(is.null(slashline), 1, slashline + 1)
@@ -155,7 +130,7 @@ readDeck <- function(deckname = NULL, props = c("PORO")){
     linesout <- c(linesout, deckdatalines[begline:endline])
     # next add in the lines from the INCLUDE file
     # the Eclipse manual states the file name  should be on the next line
-    fn <- .getfn(deckdatalines[includeline + 1])
+    fn <- .GetFN(deckdatalines[includeline + 1])
     fn <- file.path(dirpath, fn)
     includechunk <- readLines(fn, warn = FALSE)
     linesout <- c(linesout, includechunk)
@@ -167,7 +142,7 @@ readDeck <- function(deckname = NULL, props = c("PORO")){
   return(linesout)
 }
 
-.getfn <- function(deckline){
+.GetFN <- function(deckline){
 # clean up all of the crap from the line giving the INCLUDE file name
   fn <- gsub("^\\s*", "", deckline)
   fn <- gsub("\\s*$", "", fn)

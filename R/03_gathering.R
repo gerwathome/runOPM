@@ -7,83 +7,105 @@
 #' @references \href{http://ert.nr.no/ert/index.php/Main_Page}{Ensemble Reservoir Tool}, \href{https://github.com/Statoil/libecl}{libecl}
 #' @export
 #------------------------------------------------------------------------------
-eclsum <- function(casename = "^.+", basedir="."){
+EclSum <- function(casename = "^.+", basedir = "."){
   basedir <- normalizePath(basedir)
-  sumfiles <- .findSummary(basedir = basedir, casename = casename)
+  sumfiles <- .FindSummary(basedir = basedir, casename = casename)
   long <- data.frame(
-    CASENAME=character(),
-    DAYS=numeric(),
-    DATE=as.Date(character()),
-    WGNAME=character(),
-    KEYWORD=character(),
-    VALUE=numeric(),
-    UNITS=character(),
-    COMMENT=character(),
-    stringsAsFactors=FALSE)
+    CASENAME = character(),
+    DAYS = numeric(),
+    DATE = as.Date(character()),
+    WGNAME = character(),
+    KEYWORD = character(),
+    VALUE = numeric(),
+    UNITS = character(),
+    COMMENT = character(),
+    stringsAsFactors = FALSE)
   projsum <- file.path(basedir,"REPORTS","PROJSUM.csv")
-  if(file.exists(projsum)){long <- readr::read_csv(projsum,
-                                                   col_types = readr::cols())}
-  if(length(sumfiles) > 0)(
-    for(infile in sumfiles){
+  if (file.exists(projsum)) {
+    # use readr here because this file may get very large
+    long <- readr::read_csv(projsum, col_types = readr::cols())
+    }
+  if (length(sumfiles) > 0) {
+    for (infile in sumfiles) {
       case <- basename(infile)
-      case <- sub("[.][^.]*$", "", case, perl=TRUE)
-      dupcase <- long$CASENAME == case
-      long <- long[!dupcase,]
+      case <- sub("[.][^.]*$", "", case, perl = TRUE)
       outfile <- file.path(basedir, "OUTPUT", case, paste0(case,".csv"))
-      rPython::python.exec("import sys")
-      rPython::python.exec("import ert.ecl.ecl as ecl")
-      rPython::python.assign("case",case)
-      rPython::python.assign("infile",infile)
-      rPython::python.assign("outfile",outfile)
-      # the python structure is too complex to read in directly with RJSONIO
-      try_err <- try(rPython::python.exec("sum_data = ecl.EclSum(infile)"),
-                     silent=TRUE)
-      # Using ; as a seperator is important here, as some of the keys have
-      #  commas in them
-      if(is.null(try_err)){
-        rPython::python.exec("sum_data.exportCSV(outfile,date_format='%d-%b-%Y',sep=';')")
-        rPython::python.assign("sum_data","None")
-        wide.raw <- utils::read.csv(file=outfile, sep = ";",
-                                    stringsAsFactors = FALSE)
-        wide <- wide.raw[, colSums(wide.raw != 0, na.rm = TRUE) > 0]
-        grep("F(...)", colnames(wide), perl=TRUE)
-        colnames(wide) <- sub("F(...)", "W\\1.FIELD", colnames(wide), perl=TRUE)
-        inxyzpat <- "(\\d+)\\.(\\d+)\\.(\\d+)"
-        outxyzpat <- "\\1_\\2_\\3"
-        colnames(wide) <- gsub(inxyzpat, outxyzpat, colnames(wide), perl=TRUE)
-        wide$DATE <- as.Date(wide$DATE, "%d-%b-%Y")
-        wide <- data.frame(CASE=rep(case,length(wide$DATE)),wide)
-        wide <- .add_wor(wide)
-        #      wide <- .add_gor(wide)
-        long <- rbind(long, .wide2long(wide))
+      wide_raw <- .GetECL(case, infile, outfile)
+      if (is.data.frame(wide_raw)) {
+        wide <- .CleanWide(case, wide_raw)
+        # wide <- .AddWOR(wide)
+        # wide <- .AddGOR(wide)
+        dupcase <- long$CASENAME == case
+        long <- long[!dupcase,]
+        long <- rbind(long, .Wide2Long(wide))
         readr::write_csv(long, projsum)
         return(long)
       }else{warning("Failed to parse ", infile)}
     } # end for loop
-  ) # end if sumfiles > 0
+  } else {
+    warning(paste0("Failed to find and summary files in directory ",
+                   basedir, "for case '", casename, "'"))
+  } # end if else sumfiles > 0
   return(long)
 }
 #------------------------------------------------------------------------------
-.wide2long <- function(df){
+# keep all of the python in one function, for later removal (I hope)
+.GetECL <- function(case, infile, outfile){
+  rPython::python.exec("import sys")
+  rPython::python.exec("import ert.ecl.ecl as ecl")
+  rPython::python.assign("case",case)
+  rPython::python.assign("infile",infile)
+  rPython::python.assign("outfile",outfile)
+  # the python structure is too complex to read in directly with RJSONIO
+  try_err <- try(rPython::python.exec("sum_data = ecl.EclSum(infile)"),
+                 silent = TRUE)
+  # Using ; as a seperator is important here, as some of the keys have
+  #  commas in them
+  if (is.null(try_err)) {
+    rPython::python.exec("sum_data.exportCSV(outfile,date_format = '%d-%b-%Y',sep = ';')")
+    rPython::python.assign("sum_data","None")
+    wide_raw <- utils::read.csv(file = outfile, sep = ";",
+                                stringsAsFactors = FALSE)
+  } else {
+    warning(paste0("Failed to convert ECL to csv for case ", case))
+  }
+  return(wide_raw)
+}
+#------------------------------------------------------------------------------
+.CleanWide <- function(case, wide_raw){
+  wide <- wide_raw[, colSums(wide_raw != 0, na.rm = TRUE) > 0]
+  grep("F(...)", colnames(wide), perl = TRUE)
+  colnames(wide) <- sub("F(...)", "W\\1.FIELD", colnames(wide),
+                        perl = TRUE)
+  inxyzpat <- "(\\d+)\\.(\\d+)\\.(\\d+)"
+  outxyzpat <- "\\1_\\2_\\3"
+  colnames(wide) <- gsub(inxyzpat, outxyzpat, colnames(wide),
+                         perl = TRUE)
+  wide$DATE <- as.Date(wide$DATE, "%d-%b-%Y")
+  wide <- data.frame(CASE = rep(case,length(wide$DATE)),wide,
+                     stringsAsFactors = FALSE)
+  return(wide)
+}
+#------------------------------------------------------------------------------
+.Wide2Long <- function(df){
   dfl <- data.frame(
-    CASENAME=character(),
-    DAYS=numeric(),
-    DATE=as.Date(character()),
-    WGNAME=character(),
-    KEYWORD=character(),
-    VALUE=numeric(),
-    UNITS=character(),
-    COMMENT=character(),
-    stringsAsFactors=FALSE)
+    CASENAME = character(),
+    DAYS = numeric(),
+    DATE = as.Date(character()),
+    WGNAME = character(),
+    KEYWORD = character(),
+    VALUE = numeric(),
+    UNITS = character(),
+    COMMENT = character(),
+    stringsAsFactors = FALSE)
   pat <- "^(\\w+)\\.(\\w+)$";
-#  pat <- "^(\\w+):(\\w+)$";
+  #  pat <- "^(\\w+):(\\w+)$";
   vars <-  colnames(df)
-  kw.wgn <- vars[grep(pat, vars, perl=TRUE)]
-  kw <- sub(pat, "\\1", kw.wgn, perl=TRUE)
-  wgn <- sub(pat, "\\2", kw.wgn, perl=TRUE)
+  kw.wgn <- vars[grep(pat, vars, perl = TRUE)]
+  kw <- sub(pat, "\\1", kw.wgn, perl = TRUE)
+  wgn <- sub(pat, "\\2", kw.wgn, perl = TRUE)
   ndays <- length(df$DAYS)
-  for(i in 1:length(wgn)){
-#    if(all(df[,3+i]==0, na.rm = TRUE)){next}
+  for (i in 1:length(wgn)) {
     tdfl <- data.frame(
       CASENAME = df[,"CASE"],
       DAYS = df[,"DAYS"],
@@ -91,7 +113,7 @@ eclsum <- function(casename = "^.+", basedir="."){
       WGNAME = rep(wgn[i],ndays),
       KEYWORD = rep(kw[i],ndays),
       VALUE = df[,kw.wgn[i]],
-      UNITS = rep(.kw2units(kw[i]),ndays),
+      UNITS = rep(.KW2Units(kw[i]),ndays),
       COMMENT = "",
       stringsAsFactors = FALSE)
     dfl <- rbind(dfl,tdfl)
@@ -106,29 +128,28 @@ eclsum <- function(casename = "^.+", basedir="."){
 #' @param casename The deck basename of an Eclipse style simulation summary output.  A perl style regular expression may be used to find multiple summary files.
 #' @param ext A list file extents used to create a search pattern.  Default is c(".data", ".DATA")
 #' @param recursive Should we look in the directories recursively?  Default is TRUE.
+#' @param ... Any other list.files arguments that might be necessary
 #' @details Default behavior to to search recursively in the basedir to find a list of ECl style input decks files.
 #' @return The function returns a list of .DATA files with the full path.
-.findDecks <- function(basedir = NULL,
-                      casename = "^.+",
-                      ext = c("\\.data$", "\\.DATA$"),
-                      recursive = TRUE){
-  if(is.null(basedir)){
+.FindDecks <- function(basedir = NULL,
+                       casename = "^.+",
+                       ext = "\\.DATA$",
+                       recursive = TRUE,
+                       ...){
+  if (is.null(basedir)) {
     basedir <- getwd()
   }else{
     basedir <- normalizePath(basedir)
   }
   decks <- character()
-  for(pat in ext){
+  for (pat in ext) {
     pattern <- paste0(casename, pat)
-    searchdirs <- list.dirs(path = basedir,
-                            full.names = TRUE,
-                            recursive = TRUE)
-    searchdir <- searchdirs[grep(casename,searchdirs,perl=TRUE)]
-    deckpath <-list.files(path=searchdir,
-                          pattern=pattern,
+    deckpath <- list.files(path = basedir,
+                          pattern = pattern,
                           full.names = TRUE,
-#                          recursive=recursive,
-                          include.dirs=TRUE)
+                          recursive = recursive,
+                          ignore.case = TRUE,
+                          include.dirs = TRUE)
     decks <- c(decks, deckpath)
   }
   return(decks)
@@ -140,43 +161,45 @@ eclsum <- function(casename = "^.+", basedir="."){
 # formatted unified: .FUNSMRY
 # formatted not unified: .Axxxx
 # look for only unified files, for now
-.findSummary <- function(basedir = ".",
+.FindSummary <- function(basedir = ".",
                          casename = "^.+",
-                         recursive = TRUE){
-  ext <- c(".unsmry", ".UNSMRY", ".funsmry", ".FUNSMRY")
-  sumfiles <- .findDecks(basedir = basedir,
-                        casename = casename,
-                        ext = ext,
-                        recursive = recursive)
-  if(length(sumfiles) < 1){warning(paste0("Failed to locate Eclipse style",
-                                          " summary output files. Did the ",
-                                          "run '", casename,  "' complete ",
-                                          " properly?"))
+                         recursive = TRUE,
+                         ...){
+   ext <- c("\\.F*UNSMRY")
+  #  ext <- c(".unsmry", ".UNSMRY", ".funsmry", ".FUNSMRY")
+  sumfiles <- .FindDecks(basedir = basedir,
+                         casename = casename,
+                         ext = ext,
+                         recursive = recursive)
+  if (length(sumfiles) < 1) {warning(paste0("Failed to locate Eclipse style",
+                                            " summary output files. Did the ",
+                                            "run '", casename,  "' complete ",
+                                            " properly?"))
   }
   return(sumfiles)
 }
 #------------------------------------------------------------------------------
 # this isn't called directly, but used by add_gor and add_wor
-.wgnames <- function(df){
+.WGNames <- function(df){
   pat <- "^\\w+\\.(\\w+)$";
-#  pat <- "^\\w+:(\\w+)$";
-  kw.wgn <- colnames(df)[grep(pat, colnames(df), perl=TRUE)]
-  wgn <- sub(pat, "\\1", kw.wgn, perl=TRUE)
+  #  pat <- "^\\w+:(\\w+)$";
+  kw.wgn <- colnames(df)[grep(pat, colnames(df), perl = TRUE)]
+  wgn <- sub(pat, "\\1", kw.wgn, perl = TRUE)
   return(unique(wgn))
 }
 #------------------------------------------------------------------------------
-.add_gor <- function(df){
-  wells <- .wgnames(df)
+.AddGOR <- function(df){
+  wells <- .WGNames(df)
   vars <- colnames(df)
-  for(well in wells){
+  for (well in wells) {
     opr <- paste0("WOPR.",well)
-    oprcol <- grep(opr, vars, fixed=TRUE)
+    oprcol <- grep(opr, vars, fixed = TRUE)
     gpr <- paste0("WGPR.",well)
-    gprcol <- grep(gpr, vars, fixed=TRUE)
+    gprcol <- grep(gpr, vars, fixed = TRUE)
     gor <- paste0("WGOR.",well)
-    if(any(oprcol) & any(gprcol)){
+    if (any(oprcol) & any(gprcol)) {
       tmp <- df[,gprcol]/df[,oprcol]
-      tmp[df[,oprcol]==0] <- 0
+      tmp[df[,oprcol] == 0] <- 0
       df <- cbind(df,tmp)
       colnames(df) <- c(vars,gor)
     }
@@ -184,18 +207,18 @@ eclsum <- function(casename = "^.+", basedir="."){
   return(df)
 }
 #------------------------------------------------------------------------------
-.add_wor <- function(df){
-  wells <- .wgnames(df)
+.AddWOR <- function(df){
+  wells <- .WGNames(df)
   vars <- colnames(df)
-  for(well in wells){
+  for (well in wells) {
     opr <- paste0("WOPR.",well)
-    oprcol <- grep(opr, vars, fixed=TRUE)
+    oprcol <- grep(opr, vars, fixed = TRUE)
     wpr <- paste0("WWPR.",well)
-    wprcol <- grep(wpr, vars, fixed=TRUE)
+    wprcol <- grep(wpr, vars, fixed = TRUE)
     wor <- paste0("WWOR.",well)
-    if(any(oprcol) & any(wprcol)){
+    if (any(oprcol) & any(wprcol)) {
       tmp <- df[,wprcol]/df[,oprcol]
-      tmp[df[,oprcol]==0] <- 0
+      tmp[df[,oprcol] == 0] <- 0
       df <- cbind(df,tmp)
       colnames(df) <- c(vars,wor)
     }
@@ -205,8 +228,8 @@ eclsum <- function(casename = "^.+", basedir="."){
 #------------------------------------------------------------------------------
 # functionality to check deck for units type needs to be tested
 # still nned to see what the Metric units are
-.kw2units <- function(keyword, type="FIELD", deck=NULL){
-  if(!is.null(deck)){type <- .findUnitType(deck)}
+.KW2Units <- function(keyword, type="FIELD", deck=NULL){
+  if (!is.null(deck)) {type <- .FindUnitType(deck)}
   unitsF <- switch(keyword,
                    "WOPR" = "STBD",      # Oil Prod Rate
                    "WWPR" = "STBD",      # Water Prod Rate
@@ -226,7 +249,7 @@ eclsum <- function(casename = "^.+", basedir="."){
                    "WBDP" = "PSIA",      # well bore pressure drop
                    "BPR" = "PSIA",       # block pressure
                    ""
-                   )
+  )
   unitsM <- switch(keyword,
                    "WOPR" = "STBD",      # Oil Prod Rate
                    "WWPR" = "STBD",      # Water Prod Rate
@@ -251,50 +274,52 @@ eclsum <- function(casename = "^.+", basedir="."){
   return(units)
 }
 #------------------------------------------------------------------------------
-.findUnitType <- function(deck){
-  if(!file.exists(deck)){warning(paste("Can't find deck to check units type.",
-                                       "FIELD units is assumed", sep=" "))}
+.FindUnitType <- function(deck){
+  if (!file.exists(deck)) {warning(paste0("Can't find deck to check units ",
+                                          "type.  ", "FIELD units are ",
+                                          "assumed"))}
   type <- ifelse(
-    purrr::is_empty(grep('METRIC',readLines(deck))),
+    purrr::is_empty(grep('^METRIC$',readLines(deck))),
     "FIELD",
     "METRIC")
   return(type)
 }
 #------------------------------------------------------------------------------
-.kw2descrip <- function(keyword){
+.KW2Descrip <- function(keyword){
   descrip <- switch(keyword,
-                  "WOPR" = "Oil Prod Rate",
-                  "WWPR" = "Water Prod Rate",
-                  "WGPR" = "Gas Prod Rate",
-                  "WOPT" = "Cum Oil Prod",
-                  "WWPT" = "Cum Water Prod",
-                  "WGPT" = "Cum Gas Prod",
-                  "WGOR" = "Gas Oil Ratio",
-                  "WWOR" = "Water Oil Ratio",
-                  "WOIR" = "Oil Inj Rate",
-                  "WWIR" = "Water Inj Rate",
-                  "WGIR" = "Gas Inj Rate",
-                  "WOIT" = "Cum Oil Inj",
-                  "WWIT" = "Cum Water Inj",
-                  "WGIT" = "Cum Gas Inj",
-                  "WBHP" = "Bottom Hole Pressure",
-                  "WBDP" = "Well Bore Pressure Drop",
-                  "BPR"  = "Block Pressure",
-                  "Unknown Parameter"
+                    "WOPR" = "Oil Prod Rate",
+                    "WWPR" = "Water Prod Rate",
+                    "WGPR" = "Gas Prod Rate",
+                    "WOPT" = "Cum Oil Prod",
+                    "WWPT" = "Cum Water Prod",
+                    "WGPT" = "Cum Gas Prod",
+                    "WGOR" = "Gas Oil Ratio",
+                    "WWOR" = "Water Oil Ratio",
+                    "WOIR" = "Oil Inj Rate",
+                    "WWIR" = "Water Inj Rate",
+                    "WGIR" = "Gas Inj Rate",
+                    "WOIT" = "Cum Oil Inj",
+                    "WWIT" = "Cum Water Inj",
+                    "WGIT" = "Cum Gas Inj",
+                    "WBHP" = "Bottom Hole Pressure",
+                    "WBDP" = "Well Bore Pressure Drop",
+                    "BPR"  = "Block Pressure",
+                    "Unknown Parameter"
   )
   return(descrip)
 }
 #------------------------------------------------------------------------------
-# the ... is to pass a type or deck argument to .kw2units
-.kw2label <- function(keyword, ...){
-  label <- paste0(.kw2descrip(keyword), ", ", .kw2units(keyword))
+# the ... is to pass a type or deck argument to .KW2Units
+.KW2Label <- function(keyword, ...){
+  label <- paste0(.KW2Descrip(keyword), ", ", .KW2Units(keyword))
+  if (identical(.KW2Descrip(keyword),"Unknown Parameter")) {label <- keyword}
   return(label)
 }
 #------------------------------------------------------------------------------
-.wgn_kw2title <- function(wgn, keyword){
+.WGN_KW2Title <- function(wgn, keyword){
   beg <- wgn
-  end <- .kw2descrip(keyword)
-  if(identical(end,"Unknown Parameter")){end <- keyword}
+  end <- .KW2Descrip(keyword)
+  if (identical(end,"Unknown Parameter")) {end <- keyword}
   title <- paste0(beg, ":  ", end)
   return(title)
 }

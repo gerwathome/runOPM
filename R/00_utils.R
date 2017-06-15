@@ -1,4 +1,18 @@
-#' @title A substitute for the DiceDesign::rss2d to fix a bug
+#' @title A substitute for the DiceDesign::rss2d to fix a bug:  2D graphical tool for defect detection of Space-Filling Designs.
+#' @description For a 2-dimensional design, the 2D radial scanning statistic (RSS) scans angularly the domain. In each direction, it compares the distribution of projected points to their theoretical distribution under the assumption that all design points are drawn from uniform distribution. For a d-dimensional design, all pairs of dimensions are scanned.The RSS detects the defects of low discrepancy sequences or orthogonal arrays, and can be used for selecting space-filling designs.
+#' @param design a matrix or data.frame containing the d-dimensional design of experiments. The row no. i contains the values of the d input variables corresponding to simulation no. i
+#' @param lower the domain lower boundaries.
+#' @param upper the domain upper boundaries.
+#' @param gof.test.type an optional character indicating the kind of statistical test to be used to test the goodness-of-fit of the design projections to their theoretical distribution. Several tests are available, see unif.test.statistic. Default is "greenwood".
+#' @param gof.test.stat an optional number equal to the goodness-of-fit statistic at level 5\%. Default is the modified test statistic for fully specified distribution (see details below).
+#' @param transform an optional character indicating what type of transformation should be applied before testing uniformity. Only one choice available "spacings", that lead to over-detection. Default - and recommended - is NULL.
+#' @param n.angle an optional number indicating the number of angles used. Default is 360 corresponding to a 0.5-degree discretization step. Note that the RSS curve is continuous.
+#' @param graphics an optional integer indicating whether a graph should be produced. If negative, no graph is produced. If superior to 2, the RSS curve only is plotted in the worst 2D coordinate subspace (corr. to the worst value of statistic). If 1 (default), the design is also added, with its projections onto the worst (oblique) axis.
+#' @param trace an optional boolean. Turn it to FALSE if you want no verbosity.
+#' @param lines.lwd optional number specifying the width of the straight lines involved in the graphical outputs (axis and projections)
+#' @param lines.lty optional character string specifying the type of the straight lines involved in the graphical outputs (axis and projections)
+#' @param ... optional graphical parameters of plot function, to draw the RSS curve.
+#' @return a list with components:
 #' @export
 rss2d <- function(design, lower, upper, gof.test.type="greenwood", gof.test.stat=NULL, transform=NULL, n.angle=360, graphics=1, trace=TRUE, lines.lwd=1, lines.lty="dotted", ...)  {
 
@@ -64,14 +78,14 @@ rss2d <- function(design, lower, upper, gof.test.type="greenwood", gof.test.stat
 
 
       # 1st step : compute the matrix of the F(projected points onto Vect(cos.theta, sin.theta))
-      out <- .C("C_rss2Dloop", as.double(x), as.double(y), as.double(cos.theta), as.double(sin.theta), as.integer(n), as.integer(n.theta), ans=double(n * n.theta), PACKAGE="DiceDesign")
+      out <- .C("C_rss2Dloop", as.double(x), as.double(y), as.double(cos.theta), as.double(sin.theta), as.integer(n), as.integer(n.theta), ans=double(n * n.theta), PACKAGE="runOPM")
       F.projections <- matrix(out$ans, n, n.theta)
 
       # 2nd step : for each angle, compute the statistic
       # In future version, should be computed inside the C loop
       anglewise.stat.ij <- matrix(NA, n.theta, 1)
       for (angle in 1:n.theta) {
-        anglewise.stat.ij[angle] <- unif.test.statistic(x=F.projections[,angle], type=gof.test.type, transform=transform)
+        anglewise.stat.ij[angle] <- DiceDesign::unif.test.statistic(x=F.projections[,angle], type=gof.test.type, transform=transform)
       }
 
 
@@ -106,7 +120,7 @@ rss2d <- function(design, lower, upper, gof.test.type="greenwood", gof.test.stat
   # see D'Agostino and Stephens "Goodness-of-fit techniques", 1986
 
   if (is.null(gof.test.stat)) {
-    gof.test.stat <- unif.test.quantile(type=gof.test.type, n=n, alpha=0.05)
+    gof.test.stat <- DiceDesign::unif.test.quantile(type=gof.test.type, n=n, alpha=0.05)
   }
 
   anglewise.stat.max <- max(anglewise.stat)
@@ -128,8 +142,8 @@ rss2d <- function(design, lower, upper, gof.test.type="greenwood", gof.test.stat
 
 
     if (is.element(graphics, c(0,1))) {
-      par(mfrow=c(1,2+graphics))
-      plot(design, xlim=c(-1,1), ylim=c(-1,1),
+      graphics::par(mfrow=c(1,2+graphics))
+      graphics::plot(design, xlim=c(-1,1), ylim=c(-1,1),
            xlab=design.names[1], ylab=design.names[2])
     }
 
@@ -138,35 +152,46 @@ rss2d <- function(design, lower, upper, gof.test.type="greenwood", gof.test.stat
       rx <- c(rss.curve.x, -rss.curve.x, rss.curve.x[1])
       ry <- c(rss.curve.y, -rss.curve.y, rss.curve.y[1])
       graph.size <- max(abs((anglewise.stat.max)*dir.max), gof.test.stat)*1.05
-      plot(rx, ry, xlim=c(-graph.size,graph.size), ylim=c(-graph.size, graph.size),
+      graphics::plot(rx, ry, xlim=c(-graph.size,graph.size), ylim=c(-graph.size, graph.size),
            xlab="", ylab="", ...)
 
       # draw the circle with radius equal to the threshold at significance level 5%
       theta_aux <- seq(from=0, to=2*pi+0.1,by=0.1)
-      lines(gof.test.stat*cos(theta_aux), gof.test.stat*sin(theta_aux))
+      graphics::lines(gof.test.stat*cos(theta_aux), gof.test.stat*sin(theta_aux))
 
       # draw the coordinate axis in dotted lines
-      abline(h=0, v=0, lty=lines.lty, col="black", lwd=lines.lwd)
+      graphics::abline(h=0, v=0, lty=lines.lty, col="black", lwd=lines.lwd)
     }
 
     if (is.element(graphics, c(0,1))) {
-      plot(design, xlim=c(-1,1), ylim=c(-1,1),
+      graphics::plot(design, xlim=c(-1,1), ylim=c(-1,1),
            xlab=design.names[1], ylab=design.names[2])
       projections <- design %*% dir.max
-      points(projections*dir.max[1], projections*dir.max[2], pch=20, col="red")
+      graphics::points(projections*dir.max[1], projections*dir.max[2], pch=20, col="red")
       if (cos.theta.max==0) {
-        lines(c(0,0), c(-1,1), col="red")
-      } else lines(c(-1,1), c(-1,1)*sin.theta.max/cos.theta.max, col="red")
-      for (i in 1:n) lines(c(design[i,1], projections[i]*cos.theta.max), c(design[i,2], projections[i]*sin.theta.max), lty=lines.lty, lwd=lines.lwd)
+        graphics::lines(c(0,0), c(-1,1), col="red")
+      } else graphics::lines(c(-1,1), c(-1,1)*sin.theta.max/cos.theta.max, col="red")
+      for (i in 1:n) graphics::lines(c(design[i,1], projections[i]*cos.theta.max), c(design[i,2], projections[i]*sin.theta.max), lty=lines.lty, lwd=lines.lwd)
     }
 
-    par(mfrow=c(1,1))
+    graphics::par(mfrow=c(1,1))
   }
 
   return(list(global.stat=global.stat, worst.case=pair.worst, worst.dir=dir.max, stat=as.numeric(anglewise.stat), angle=as.numeric(theta), curve=cbind(c(rss.curve.x,-rss.curve.x), c(rss.curve.y,-rss.curve.y)),  gof.test.stat=gof.test.stat))
 }
 
 #' @title A substitute for the DiceDesign::rss3d to fix a bug
+#' @description  For a 3-dimensional design, the 3D radial scanning statistic (RSS) scans angularly the domain. In each direction, it compares the distribution of projected points to their theoretical distribution under the assumption that all design points are drawn from uniform distribution. For a d-dimensional design, all triplets of dimensions are scanned. The RSS detects the defects of low discrepancy sequences or orthogonal arrays, and can be used for selecting space-filling designs.
+#' @param design a matrix or data.frame containing the d-dimensional design of experiments. The row no. i contains the values of the d input variables corresponding to simulation no. i
+#' @param lower the domain lower boundaries.
+#' @param upper the domain upper boundaries.
+#' @param gof.test.type an optional character indicating the kind of statistical test to be used to test the goodness-of-fit of the design projections to their theoretical distribution. Several tests are available, see unif.test.statistic. Default is "greenwood".
+#' @param gof.test.stat an optional number equal to the goodness-of-fit statistic at level 5\%. Default is the modified test statistic for fully specified distribution (see details below).
+#' @param transform an optional character indicating what type of transformation should be applied before testing uniformity. Only one choice available "spacings", that lead to over-detection. Default - and recommended - is NULL.
+#' @param n.angle an optional number indicating the number of angles used. Default is 360 corresponding to a 0.5-degree discretization step. Note that the RSS curve is continuous.
+#' @param graphics an optional integer indicating whether a graph should be produced. If negative, no graph is produced. Otherwise (default), the design is plotted in the worst 3D coordinate subspace (corr. to the worst value of statistic), with its projections onto the worst (oblique) axis
+#' @param trace an optional boolean. Turn it to FALSE if you want no verbosity.
+#' @return a list with components:
 #' @export
 rss3d<-function(design, lower, upper, gof.test.type="greenwood", gof.test.stat=NULL, transform=NULL, n.angle=60, graphics=1, trace=TRUE){
 
@@ -252,7 +277,7 @@ rss3d<-function(design, lower, upper, gof.test.type="greenwood", gof.test.stat=N
 
           # 1st step : compute the matrix of the F(projected points onto Vect(cos.theta, sin.theta))
 
-          out <- .C("C_rss3Dloop", as.double(x), as.double(y), as.double(z), as.double(ax), as.double(ay), as.double(az), as.integer(n), as.integer(n.theta), as.integer(n.phi), as.integer(j-1), ans=double(n * n.theta), PACKAGE="DiceDesign")
+          out <- .C("C_rss3Dloop", as.double(x), as.double(y), as.double(z), as.double(ax), as.double(ay), as.double(az), as.integer(n), as.integer(n.theta), as.integer(n.phi), as.integer(j-1), ans=double(n * n.theta), PACKAGE="runOPM")
 
           F.projections <- matrix(out$ans, n, n.theta)
 
@@ -260,7 +285,7 @@ rss3d<-function(design, lower, upper, gof.test.type="greenwood", gof.test.stat=N
           # 2nd step: test statistic computations
 
           for (k in 1:n.theta) {
-            anglewise.stat[k,j] <- unif.test.statistic(x=F.projections[,k], type=gof.test.type, transform=transform)
+            anglewise.stat[k,j] <- DiceDesign::unif.test.statistic(x=F.projections[,k], type=gof.test.type, transform=transform)
           }	# end loop over theta (k)
 
         } # end loop over phi (j)
@@ -290,7 +315,7 @@ rss3d<-function(design, lower, upper, gof.test.type="greenwood", gof.test.stat=N
   # threshold at significance level 5%
 
   if (is.null(gof.test.stat)) {
-    gof.test.stat <- unif.test.quantile(type=gof.test.type, n=n, alpha=0.05)
+    gof.test.stat <- DiceDesign::unif.test.quantile(type=gof.test.type, n=n, alpha=0.05)
   }
 
 
@@ -338,7 +363,7 @@ rss3d<-function(design, lower, upper, gof.test.type="greenwood", gof.test.stat=N
         }
         if (max(abs(projections[i]*dir.max))<=1) rgl::plot3d(projections[i]*dir.max[1], projections[i]*dir.max[2], projections[i]*dir.max[3], pch=20, col="red", size=5, add=TRUE)
       }
-      par(mfrow=c(1,1))
+      graphics::par(mfrow=c(1,1))
 
     } else {
       print("Error : the package rgl is not installed")

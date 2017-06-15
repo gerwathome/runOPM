@@ -4,3 +4,5 @@
 .Ruserdata
 inst/doc
 vignettes/tmp
+src/*.o
+src/*.so

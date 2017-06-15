@@ -6,59 +6,59 @@
 #' @return Returns a template object, and writes out a template object file.
 #' @export
 #------------------------------------------------------------------------------
-readtemplate <- function(template = NULL, basedir="."){
+ReadTemplate <- function(template = NULL, basedir="."){
   dbg <- TRUE
   ddbg <- FALSE
   basedir <- normalizePath(basedir)
   decksdir <- file.path(basedir,"DECKS")
   tdp <- character()
-  if(!is.null(template)){
-    if(file.exists(template)){
+  if (!is.null(template)) {
+    if (file.exists(template)) {
       tdp <- template
-    }else if(file.exists(file.path(decksdir,template))){
+    } else if (file.exists(file.path(decksdir,template))) {
       tdp <- file.path(decksdir,template)
     }else{
       stop(paste("Failed to find template deck", template))
     } # checking for file existance
-  }else{
+  } else {
     stop("A template deck must be specified.")
   } # if not null
   objname <- basename(tdp)
-  objname <- sub("\\.\\w+$","", objname, perl=TRUE)
+  objname <- sub("\\.\\w+$", "", objname, perl = TRUE)
   td <- readLines(tdp)
   varpat <- "^.+{\\$(\\w+)}.+$"
-  varnames <- grep(varpat, td, value=TRUE, perl=TRUE)
-  if(ddbg){print(varnames)}
-  varnames <- gsub(varpat, "\\1", varnames, perl=TRUE)
-  if(ddbg){print(varnames)}
+  varnames <- grep(varpat, td, value = TRUE, perl = TRUE)
+  if (ddbg) {print(varnames)}
+  varnames <- gsub(varpat, "\\1", varnames, perl = TRUE)
+  if (ddbg) {print(varnames)}
   nvars <- length(varnames)
   # There should probably be a way to have an undefined number of parameters and
   # discrete values.  Discrete values are expected to be INCLUDE file names.
   #  Also need to figure out how to interpose a function between variable
   # definition and writing out the deck.
-  hmvars <- list(vars=data.frame(name=character(nvars),
-                                 distribution=character(nvars),
-                                 truncLow=numeric(nvars),
-                                 truncHigh=numeric(nvars),
-                                 param1=numeric(nvars),
-                                 param2=numeric(nvars),
-                                 param3=numeric(nvars),
-                                 discrete1=character(nvars),
-                                 discrete2=character(nvars),
-                                 discrete3=character(nvars),
-                                 discrete4=character(nvars),
-                                 discrete5=character(nvars),
-                                 stringsAsFactors=FALSE
+  hmvars <- list(vars = data.frame(name = character(nvars),
+                                 distribution = character(nvars),
+                                 truncLow = numeric(nvars),
+                                 truncHigh = numeric(nvars),
+                                 param1 = numeric(nvars),
+                                 param2 = numeric(nvars),
+                                 param3 = numeric(nvars),
+                                 discrete1 = character(nvars),
+                                 discrete2 = character(nvars),
+                                 discrete3 = character(nvars),
+                                 discrete4 = character(nvars),
+                                 discrete5 = character(nvars),
+                                 stringsAsFactors = FALSE
   ),
-  expDesignCoded=data.frame(),
-  expDesignUncoded=data.frame()
+  expDesignCoded = data.frame(),
+  expDesignUncoded = data.frame()
   )
   class(hmvars) <- "hmvars"
   hmvars$vars$name <- varnames
   hmvars$vars$distribution <- rep("unif",nvars)
-  if(!dir.exists(decksdir)){decksdir <- normalizePath(".")}
+  if (!dir.exists(decksdir)) {decksdir <- normalizePath(".")}
   rdsfn <- file.path(decksdir, paste0(objname, ".rds"))
-  if(ddbg){print(paste0("rdsfn_61 = ", rdsfn))}
+  if (ddbg) {print(paste0("rdsfn_61 = ", rdsfn))}
   saveRDS(hmvars, file = rdsfn)
   return(hmvars)
 } # end function
@@ -69,43 +69,49 @@ readtemplate <- function(template = NULL, basedir="."){
 #' @param pattern A perl compatible regular expression identifying the variable name for which parmeters are being edited.
 #' @param basedir The path to the base directory of a simulation project.  The default is the current directory.  This is used to store the edited object.
 #' @param ... A series of param=value pairs that define how the parameter values associated with a particular variable identified by "pattern" are to be set.
+#' @param objname This is used to save the edited object to a file. It defaults to the name of the hmvars object.
 #' @details I'm thinking about it.
 #' @return Returns a template object, and writes out a template object file.
 #' @export
-editvar <- function (obj, ...) {
-  UseMethod("editvar", obj)
+EditVar <- function(obj=NULL, pattern=NULL, basedir=".", objname = deparse(substitute(obj)), ...) {
+  UseMethod("EditVar", obj)
 }
 
-editvar.default <- function(obj, ...){stop("editvar only implemented for hmvars.")}
+#' @export
+EditVar.default <- function(obj=NULL, pattern=NULL, basedir=".", objname = deparse(substitute(obj)), ...){
+  stop("EditVar only implemented for hmvars.")
+}
 
-editvar.hmvars <- function(obj=NULL, pattern=NULL, basedir=".", objname = deparse(substitute(obj)), ... ){
+#' @export
+#' @rdname EditVar
+EditVar.hmvars <- function(obj=NULL, pattern=NULL, basedir=".", objname = deparse(substitute(obj)), ...){
   dbg <- TRUE
   ddbg <- FALSE
   objname <- objname
-  if(ddbg){print(paste0("objname_84 = ", objname))}
-  if(is.null(obj)){stop("The object to edited must be supplied")}
+  if (ddbg) {print(paste0("objname_84 = ", objname))}
+  if (is.null(obj)) {stop("The object to edited must be supplied")}
   varnames <- obj$vars$name
-  editlines <- grep(pattern,obj$vars$name, perl=TRUE)
-  if(ddbg){
+  editlines <- grep(pattern,obj$vars$name, perl = TRUE)
+  if (ddbg) {
     print("editlines:  ")
-    print(paste(editlines, collapse= ", "))
+    print(paste(editlines, collapse = ", "))
   }
-  if(is.null(pattern) | !any(editlines)){
+  if (is.null(pattern) | !any(editlines)) {
     stop("A pattern to match one or more of the following variables, which ",
          "you wish to edit, must be supplied:  ",
-         paste(varnames,collapse=", "))
+         paste(varnames,collapse = ", "))
   }
   varparams <- names(obj$vars)
   passedparams <- as.list(match.call())[-1]
   ppnames <- names(passedparams)
   toedit <- intersect(varparams,ppnames)
-  if(length(toedit) < 1){
+  if (length(toedit) < 1) {
     stop("Failed to identify a parameter to edit from the object:  ",
-         paste(varparams,collapse=", "))
+         paste(varparams, collapse = ", "))
   }
-  for(i in editlines){
-    for(param in toedit){
-      if(ddbg){
+  for (i in editlines) {
+    for (param in toedit) {
+      if (ddbg) {
         print(paste("param: ", param,
                     "line :", i,
                     ",  from value:  ", passedparams[param],
@@ -116,9 +122,9 @@ editvar.hmvars <- function(obj=NULL, pattern=NULL, basedir=".", objname = depars
   }
   basedir <- normalizePath(basedir)
   decksdir <- file.path(basedir,"DECKS")
-  if(!dir.exists(decksdir)){decksdir <- normalizePath(".")}
+  if (!dir.exists(decksdir)) {decksdir <- normalizePath(".")}
   rdsfn <- file.path(decksdir, paste0(objname, ".rds"))
-  if(ddbg){print(paste0("rdsfn_120 = ", rdsfn))}
+  if (ddbg) {print(paste0("rdsfn_120 = ", rdsfn))}
   saveRDS(obj, file = rdsfn)
   return(obj)
 }
@@ -127,23 +133,30 @@ editvar.hmvars <- function(obj=NULL, pattern=NULL, basedir=".", objname = depars
 #' @param obj The name of an hmvars object.
 #' @param type The type of experimental design.  Folded Plackett-Burman is the default (and all that is supported, so far.)
 #' @param basedir The path to the base directory of a simulation project.  The default is the current directory.  This is used to store the edited object.
+#' @param ... Arguments passed to the underlying experimental design functions.
+#' @param objname This is used to save the edited object to a file. It defaults to the name of the hmvars object.
 #' @details I'm thinking about it.
 #' @return Returns a template object, and writes out a template object file.
 #' @export
-expdes <- function (obj, ...) {
-  UseMethod("expdes", obj)
+ExpDes <- function(obj=NULL, type = "fpb", basedir=".", objname = deparse(substitute(obj)), ...) {
+  UseMethod("ExpDes", obj)
 }
 
-expdes.default <- function(obj, ...){stop("expdes only implemented for hmvars.")}
+#' @export
+ExpDes.default <- function(obj=NULL, type = "fpb", basedir=".", objname = deparse(substitute(obj)), ...){
+  stop("ExpDes only implemented for hmvars.")
+  }
 
-expdes.hmvars <- function(obj=NULL, type = "fpb", basedir=".", objname = deparse(substitute(obj)), ... ){
+#' @export
+#' @rdname ExpDes
+ExpDes.hmvars <- function(obj=NULL, type = "fpb", basedir=".", objname = deparse(substitute(obj)), ...){
   dbg <- TRUE
   ddbg <- FALSE
   objname <- objname
-  if(ddbg){print(paste0("objname_141 = ", objname))}
+  if (ddbg) {print(paste0("objname_141 = ", objname))}
   factor.names <- obj$vars$name
-  if(type == "fpb"){
-    nruns <- ceiling((length(factor.names)+1)/4)*4
+  if (type == "fpb") {
+    nruns <- ceiling((length(factor.names) + 1 ) / 4) * 4
     pbtext <- paste0("FrF2::pb(nruns = nruns, ",
                      "factor.names = factor.names)")
     pbed <- eval(parse(text = pbtext))
@@ -163,24 +176,100 @@ expdes.hmvars <- function(obj=NULL, type = "fpb", basedir=".", objname = deparse
   # copy from coded to uncoded for dimensions and column names
   obj$expDesignUncoded <- obj$expDesignCoded
   # calculate the uncoded values
-  for(var in obj$vars$name){
-    for(i in 1:length(obj$expDesignCoded[,1])){
+  for (var in obj$vars$name) {
+    for (i in 1:length(obj$expDesignCoded[,1])) {
       c <- obj$expDesignCoded[i,var]
-      lu <- obj$vars$truncLow[obj$vars$name==var]
-      hu <- obj$vars$truncHigh[obj$vars$name==var]
-      obj$expDesignUncoded[i,var] <- .coded2uncoded(c, lu, hu)
+      lu <- obj$vars$truncLow[obj$vars$name == var]
+      hu <- obj$vars$truncHigh[obj$vars$name == var]
+      obj$expDesignUncoded[i,var] <- .Coded2Uncoded(c, lu, hu)
     } # end for i
   } # end for var
-basedir <- normalizePath(basedir)
-decksdir <- file.path(basedir,"DECKS")
-if(!dir.exists(decksdir)){decksdir <- normalizePath(".")}
-rdsfn <- file.path(decksdir, paste0(objname, ".rds"))
-if(ddbg){print(paste0("rdsfn_175 = ", rdsfn))}
-saveRDS(obj, file = rdsfn)
-return(obj)
+  basedir <- normalizePath(basedir)
+  decksdir <- file.path(basedir,"DECKS")
+  if (!dir.exists(decksdir)) {decksdir <- normalizePath(".")}
+  rdsfn <- file.path(decksdir, paste0(objname, ".rds"))
+  if (ddbg) {print(paste0("rdsfn_175 = ", rdsfn))}
+  saveRDS(obj, file = rdsfn)
+  return(obj)
 } # end function
 
-.coded2uncoded <- function(coded, lu, hu, lc=-1, hc=1){
+#' @title Create a set of decks using a deck template and an experimental design.
+#' @description This function reads an experimental design from a hmvars object and combines it with the appropriate deck template to create a series of decks implementing the experimental design.
+#' @param obj The name of an hmvars object.
+#' @param template The deck template associated with the hmvars object.
+#' @param basedir The path to the base directory of a simulation project.  The default is the current directory.
+#' @param overwrite TRUE means overwrite all; FALSE means don't overwrite anything; NULL (the defaults) means overwrite decks older than the hmvars object.
+#' @param cases The default is NULL, meaning create a deck for all of the cases in the experimental design.  Alternatively, a list of line numbers for the desired cases may be submitted.
+#' @details I'm thinking about it.
+#' @return Returns a list of deck files suitable for use in submitting the cases
+#' @export
+BuildDecks <- function(obj, template, basedir=".", overwrite = FALSE, cases = NULL) {
+  UseMethod("BuildDecks", obj)
+}
+
+#' @export
+BuildDecks.default <- function(obj, template, basedir=".", overwrite = FALSE, cases = NULL){
+  stop("BuildDecks only implemented for hmvars.")
+  }
+
+#' @export
+#' @rdname BuildDecks
+BuildDecks.hmvars <- function(obj, template, basedir=".", overwrite = FALSE, cases = NULL){
+  dbg <- TRUE
+  ddbg <- FALSE
+  basedir <- normalizePath(basedir)
+  decksdir <- file.path(basedir,"DECKS")
+  if (!dir.exists(decksdir)) {decksdir <- normalizePath(".")}
+  if (file.exists(template)) {
+    dtp <- template
+  }else{
+    dtp <- file.path(decksdir,template)
+  }
+  if (!file.exists(dtp)) {stop(paste0("Deck template file ",
+                                    template, " could not be found."))}
+  dt <- readLines(con = dtp, warn = FALSE, skipNul = TRUE)
+  varpat <- "^.+{\\$(\\w+)}.+$"
+  dtnames <- grep(varpat, dt, value = TRUE, perl = TRUE)
+  dtnames <- sort(gsub(varpat, "\\1", dtnames, perl = TRUE))
+  ed <- obj$expDesignUncoded
+  ednames <- sort(colnames(ed))
+  if (!identical(dtnames, ednames)) {
+    stop(paste0("The variables in the template deck do not agree",
+                " with those in the experimental design."))
+  }
+  ncases <- length(ed[,1])
+  width <- nchar(as.character(ncases)) + 1
+  padfmt <- paste0("%0", width, "i")
+  caselist <- 1:ncases
+  if (!is.null(cases)) {
+    caselist <- cases
+    ncases <- length(cases)
+  }
+  decklist <- character()
+  dkbase <- basename(dtp)
+  dkbase <- sub("\\.\\w+$", "", dkbase, perl = TRUE)
+  for (i in caselist) {
+    dkname <- paste0(dkbase,"_",sprintf(padfmt,i),".DATA")
+    dkname <- file.path(decksdir, dkname)
+    decklist <- c(decklist, dkname)
+    preamble <- dtnames
+    postamble <- dt
+    for (j in 1:length(dtnames)) {
+      name <- dtnames[j]
+      val <- ed[i,name]
+      preamble[j] <- paste0("-- ", name, " = ", val)
+      varpat <- paste0("{\\$", name, "}")
+      postamble <- gsub(varpat, val, postamble, perl = TRUE)
+    }
+    hdr <- paste0("-- Sensitivity variables for case ",i)
+    ftr <- paste0("--")
+    casedeck <- c(hdr, preamble, ftr, postamble)
+    writeLines(casedeck, con = dkname)
+  }
+  return(decklist)
+} # end function
+
+.Coded2Uncoded <- function(coded, lu, hu, lc=-1, hc=1){
   # lu = low uncoded; hu = high uncoded
   # lc = low coded; hc = high coded
   m <- (hu - lu) / (hc - lc)
@@ -189,35 +278,47 @@ return(obj)
   return(uncoded)
 }
 
-.uncoded2coded <- function(uncoded,lu, hu, lc=-1, hc=1){
+.Uncoded2Coded <- function(uncoded,lu, hu, lc=-1, hc=1){
   # lu = low uncoded; hu = high uncoded
   # lc = low coded; hc = high coded
   m <- (hc - lc) / (hu - lu)
   b <- lc - m * lu
-  uncoded <- m * coded + b
+  coded <- m * uncoded + b
   return(coded)
 }
 
 # testing during development
+# I know it's pathetic
 dbg <- TRUE
 ddbg <- FALSE
 spe9vars <- list()
-if(dbg){
+if (ddbg) {
   basedir <- "/home/gerw/gitrepos/runOPM/inst/extdata/sim"
   template <- "SPE9.TEMPLATE"
   templatepath <- file.path(basedir, "DECKS", template)
-  spe9vars <- readtemplate(template = template, basedir = basedir)
-  spe9vars <- editvar(spe9vars, pattern = "PORO", truncLow = 0.1,
+  spe9vars <- ReadTemplate(template = template, basedir = basedir)
+  spe9vars <- EditVar(spe9vars, pattern = "PORO", truncLow = 0.1,
                       truncHigh = 2, param1 = 0.1, param2 = 2.0,
                       basedir = basedir)
-  spe9vars <- editvar(spe9vars, pattern = "PERM", truncLow = 0.1,
+  spe9vars <- EditVar(spe9vars, pattern = "PERM", truncLow = 0.1,
                       truncHigh = 1.5, param1 = 0.1, param2 = 2.0,
                       basedir = basedir)
-  spe9vars <- expdes(spe9vars, type="fpb",
+  spe9vars <- ExpDes(spe9vars, type = "fpb",
                      basedir = basedir)
+  # cases: either a list of lines from uncoded exp design or NULL,
+  #        indicating all of the list
+  # overwrite: TRUE => overwrite all
+  #            FALSE => don't overwrite anything
+  #            NULL => overwrite decks/cases older than obj/decklist
+  spe9decks <- BuildDecks(spe9vars, template = templatepath,  basedir = basedir,
+                          overwrite = NULL, cases = NULL)
+  ok <- RunFlow(spe9decks[1:3], basedir = basedir, overwrite = NULL, wait = TRUE)
+  if (!is.null(ok)) {print(paste0("value of ok is ", ok))}
+  spe9rslts <- EclSum(basedir = basedir)
+#  ploteach(spe9rslts, wgnames="FIELD")
 }
-if(ddbg){View(spe9vars$vars)}
-if(ddbg){View(spe9vars$expDesignCoded)}
-if(ddbg){View(spe9vars$expDesignUncoded)}
+if (ddbg) {View(spe9vars$vars)}
+if (ddbg) {View(spe9vars$expDesignCoded)}
+if (ddbg) {View(spe9vars$expDesignUncoded)}
 
 

@@ -1,6 +1,6 @@
 #' @title Run an Open Porous Media reservoir simulation
 #' @description This function deals with the details of running a reservoir simulation model.  One may specify the model deck, the output location, the executable type and version, and the computing resources used to run the job.
-#' @param deckname The name and full path to an Eclipse style simulation input deck
+#' @param decknames A character vector with the name and full path to one or more Eclipse style simulation input decks.
 #' @param basedir The base directory of a simulation project, assumed to be the current directory.  If a project directory structure does not exist, one will be created.
 #' @param sim_exec one of ("flow", "flow_mpi", "flow_polymer", "flow_sequential", "flow_solvent")
 #' @param restartcase The base name of the deck that this is a restart from.  The output will be put into the base directory.  The default is NULL.
@@ -22,7 +22,7 @@
 #' @references \href{http://opm-project.org/}{The Open Porous Media initiative}
 #' @export
 #'
-runflow <- function(deckname,
+RunFlow <- function(decknames,
                     basedir=".",
                     sim_exec="flow",
                     restartcase=NULL,
@@ -30,84 +30,87 @@ runflow <- function(deckname,
                     queue = "background",
                     overwrite = NULL,
                     wait= FALSE){
-  if(!file.exists(deckname)){
-    deckname <- file.path(basedir,"DECKS",deckname)
-    if(!file.exists(deckname)){
-      stop("Please provide a simulation deck to run.")
+  for (deckname in decknames) {
+    if (!file.exists(deckname)) {
+      deckname <- file.path(basedir,"DECKS",deckname)
+      if (!file.exists(deckname)) {
+        stop(paste0("Failed to find simulation deck ", deckname))
+      }
     }
-  }
-  # If the directory structure doesn't exist, this will create it and copy in
-  # the deck
-  ok <- TRUE
-  if(!dir.exists(file.path(basedir, "OUTPUT")) ||
-     !dir.exists(file.path(basedir, "DECKS")) ||
-     !dir.exists(file.path(basedir, "REPORTS"))){
-    ok <- makeproj(deckname, basedir)
-    if(!ok){stop("Failed to create directory structure")}
-  }
-  casename <- basename(deckname)
-  fromdeck <- normalizePath(deckname) # this must exist
-  deck <- file.path(basedir, "DECKS", casename)
-  todeck <- suppressWarnings(normalizePath(deck)) # this may exist
-  # to avoid the possibility of copying a file on top of itself
-  if(!identical(fromdeck, todeck)){file.copy(fromdeck, todeck, overwrite = TRUE)}
-  # This creates the output directory for this run
-  casename <- sub("[.][^.]*$", "", casename, perl=TRUE)
-  output_dir <- file.path(basedir, "OUTPUT", casename)
-  if(!is.null(restartcase)){output_dir <- file.path(basedir, "OUTPUT",
-                                                    restartcase)}
-  if(!dir.exists(output_dir)){
-    ok <- dir.create(output_dir, showWarnings = FALSE)
-    if(!ok){stop("Failed to create output directory.")}
-  }
-  exec_path = "/usr/bin/"
-  if(sim_version=="latest"){exec_path <- "/usr/local/bin/"}
-  exec <- paste0(exec_path, sim_exec)
-  if(!file.exists(exec)){stop("Failed to locate the desired executable.")}
+    # If the directory structure doesn't exist, this will create it and copy in
+    # the deck
+    ok <- TRUE
+    if (!dir.exists(file.path(basedir, "OUTPUT")) ||
+       !dir.exists(file.path(basedir, "DECKS")) ||
+       !dir.exists(file.path(basedir, "REPORTS"))) {
+      ok <- MakeProj(deckname, basedir)
+      if (!ok) {stop("Failed to create directory structure")}
+    }
+    casename <- basename(deckname)
+    fromdeck <- normalizePath(deckname) # this must exist
+    deck <- file.path(basedir, "DECKS", casename)
+    todeck <- suppressWarnings(normalizePath(deck)) # this may exist
+    # to avoid the possibility of copying a file on top of itself
+    if (!identical(fromdeck, todeck)) {file.copy(fromdeck, todeck,
+                                                 overwrite = TRUE)}
+    # This creates the output directory for this run
+    casename <- sub("[.][^.]*$", "", casename, perl = TRUE)
+    output_dir <- file.path(basedir, "OUTPUT", casename)
+    if (!is.null(restartcase)) {output_dir <- file.path(basedir, "OUTPUT",
+                                                      restartcase)}
+    if (!dir.exists(output_dir)) {
+      ok <- dir.create(output_dir, showWarnings = FALSE)
+      if (!ok) {stop("Failed to create output directory.")}
+    }
+    exec_path = "/usr/bin/"
+    if (sim_version == "latest") {exec_path <- "/usr/local/bin/"}
+    exec <- paste0(exec_path, sim_exec)
+    if (!file.exists(exec)) {stop("Failed to locate the desired executable.")}
 
-  # get the timestamp of the deck and unsmry files for overwrite testing
-  deckts <- file.mtime(todeck)
-  # tosmry should only have one file, but it is possible multiple runs may
-  # have different file formats; pick the newest
-  tosmry <- suppressWarnings(.findSummary(basedir = output_dir,
-                                          casename = casename,
-                                          recursive = FALSE))
-  if(length(tosmry > 1)){
-    tsold <- 0
-    fnold <- ""
-    for(fn in tosmry){
-      ts <- file.mtime(fn)
-      if(ts > tsold){
-        tsold <- ts
-        fnold <- fn
-      } # end if
-    } # end for
-    tosmry <- fnold
-  } # end tosmry > 1
-  smryts <- 0
-  if(length(tosmry) > 0){
-    smryts <-file.mtime(tosmry)
-  }
-  casepattern <- paste0(casename,"\\..+")
-  old <- list.files(path = output_dir,
-                    pattern = casepattern,
-                    full.names = TRUE)
-  if(is.null(overwrite)){
-    if(deckts > smryts){
+    # get the timestamp of the deck and unsmry files for overwrite testing
+    deckts <- file.mtime(todeck)
+    # tosmry should only have one file, but it is possible multiple runs may
+    # have different file formats; pick the newest
+    tosmry <- suppressWarnings(.FindSummary(basedir = output_dir,
+                                            casename = casename,
+                                            recursive = FALSE))
+    if (length(tosmry > 1)) {
+      tsold <- 0
+      fnold <- ""
+      for (fn in tosmry) {
+        ts <- file.mtime(fn)
+        if (ts > tsold) {
+          tsold <- ts
+          fnold <- fn
+        } # end if
+      } # end for
+      tosmry <- fnold
+    } # end tosmry > 1
+    smryts <- 0
+    if (length(tosmry) > 0) {
+      smryts <- file.mtime(tosmry)
+    }
+    casepattern <- paste0(casename,"\\..+")
+    old <- list.files(path = output_dir,
+                      pattern = casepattern,
+                      full.names = TRUE)
+    if (is.null(overwrite)) {
+      if (deckts > smryts) {
+        file.remove(old)
+      }else{
+        return(warning("Case not run because existing summary is newer than input deck."))
+      }
+
+    }else if (overwrite) {
       file.remove(old)
-    }else{
-      return(warning("Case not run because existing summary is newer than input deck."))
+    }else if (length(tosmry) > 0) {
+      return(warning("Case not run to avoid overwriting previous results."))
     }
-
-  }else if(overwrite){
-    file.remove(old)
-  }else if(length(tosmry) > 0){
-    return(warning("Case not run to avoid overwriting previous results."))
-  }
-  args <- c(deck, paste0("output_dir=", output_dir))
-  sout <- paste0(casename,".OUT")
-  sout <- file.path(output_dir, sout)
-  serr <- paste0(casename,".OUT")
-  serr <- file.path(output_dir, serr)
-  system2(exec, args=args, stdout=sout, stderr=serr, wait = wait)
-}
+    args <- c(deck, paste0("output_dir=", output_dir))
+    sout <- paste0(casename,".OUT")
+    sout <- file.path(output_dir, sout)
+    serr <- paste0(casename,".OUT")
+    serr <- file.path(output_dir, serr)
+    system2(exec, args = args, stdout = sout, stderr = serr, wait = wait)
+  } # end for decknames
+} # end function

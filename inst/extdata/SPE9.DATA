@@ -106,7 +106,7 @@ DZ
 
 -- TOPS
 INCLUDE
-	TOPSVALUES.DATA /
+	TOPSVALUES.INC /
 
 PORO
 -- Porosity in each level is contant
@@ -129,7 +129,7 @@ PORO
 
 -- PERMX, PERMY & PERMZ
 INCLUDE
-	PERMVALUES.DATA /
+	PERMVALUES.INC /
 
 ECHO
 

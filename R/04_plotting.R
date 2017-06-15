@@ -1,6 +1,3 @@
-# to keep CRAN happy with ggplot
-globalVariables(c("DATE", "VALUE", "CASENAME"))
-
 #------------------------------------------------------------------------------
 #' @title Create an individual plot for each name(WELL/FIELD/GROUP) and keyword, with multiple cases on each plot.
 #' @description This function accepts a long format dataframe as input, and creates plots using ggplot
@@ -11,17 +8,17 @@ globalVariables(c("DATE", "VALUE", "CASENAME"))
 #' @param ncolumns How many columns of plots to display.  The default is a display 3 columns wide, with as many rows as necessary to plot all of the desired plots.
 #' @details The intent of this function is to compare multiple runs (i.e. "cases") on the same plot.  With too many cases, the plot will quickly become illegible, so a reasonable selection should be made.
 #' @export
-ploteach <- function(longdata,
+PlotEach <- function(longdata,
                      casenames = NULL,
                      wgnames = NULL,
                      keywords = NULL,
                      ncolumns = 3){
   # all of the combinations of case, well and parameter with data
-  vldf <- .uniquevars(longdata)
+  vldf <- .UniqueVars(longdata)
   df <- vldf[0,]
   # filter down to selected cases
-  if(!is.null(casenames)){
-    for(i in 1:length(casenames)){
+  if (!is.null(casenames)) {
+    for (i in 1:length(casenames)) {
       filt <- vldf$CASENAME == casenames[i]
       df <- rbind(df, vldf[filt,])
     }
@@ -66,13 +63,13 @@ ploteach <- function(longdata,
     if(any(grep(b1pat,n,perl=TRUE)) |
        any(grep(b2pat,n,perl=TRUE))){lead <- "Block:  "}
     if(any(grep(fpat,n,perl=TRUE))){lead <- ""}
-    title <- .wgn_kw2title(wgn = n, keyword = k)
+    title <- .WGN_KW2Title(wgn = n, keyword = k)
     ggp <- ggplot2::ggplot(data=plotdf,
                            ggplot2::aes(x=DATE, y= VALUE, color = CASENAME))
     ggp <- ggp + ggplot2::geom_line()
     ggp <- ggp + ggplot2::labs(
       title = title,
-      y = .kw2label(vldf$KEYWORD[i])
+      y = .KW2Label(vldf$KEYWORD[i])
     )
     ggp <- ggp + ggplot2::theme_bw()
     ggp <- ggp + ggplot2::theme(
@@ -93,7 +90,7 @@ ploteach <- function(longdata,
   graphics::par(op)
 }
 #------------------------------------------------------------------------------
-.uniquevars <- function(longdata){
+.UniqueVars <- function(longdata){
   vl <- unique(paste(longdata$CASENAME,
                      longdata$WGNAME,
                      longdata$KEYWORD,sep=":"))

@@ -2,9 +2,40 @@
 % Please edit documentation in R/00_utils.R
 \name{rss2d}
 \alias{rss2d}
-\title{A substitute for the DiceDesign::rss2d to fix a bug}
+\title{A substitute for the DiceDesign::rss2d to fix a bug:  2D graphical tool for defect detection of Space-Filling Designs.}
 \usage{
 rss2d(design, lower, upper, gof.test.type = "greenwood",
   gof.test.stat = NULL, transform = NULL, n.angle = 360, graphics = 1,
   trace = TRUE, lines.lwd = 1, lines.lty = "dotted", ...)
+}
+\arguments{
+\item{design}{a matrix or data.frame containing the d-dimensional design of experiments. The row no. i contains the values of the d input variables corresponding to simulation no. i}
+
+\item{lower}{the domain lower boundaries.}
+
+\item{upper}{the domain upper boundaries.}
+
+\item{gof.test.type}{an optional character indicating the kind of statistical test to be used to test the goodness-of-fit of the design projections to their theoretical distribution. Several tests are available, see unif.test.statistic. Default is "greenwood".}
+
+\item{gof.test.stat}{an optional number equal to the goodness-of-fit statistic at level 5\%. Default is the modified test statistic for fully specified distribution (see details below).}
+
+\item{transform}{an optional character indicating what type of transformation should be applied before testing uniformity. Only one choice available "spacings", that lead to over-detection. Default - and recommended - is NULL.}
+
+\item{n.angle}{an optional number indicating the number of angles used. Default is 360 corresponding to a 0.5-degree discretization step. Note that the RSS curve is continuous.}
+
+\item{graphics}{an optional integer indicating whether a graph should be produced. If negative, no graph is produced. If superior to 2, the RSS curve only is plotted in the worst 2D coordinate subspace (corr. to the worst value of statistic). If 1 (default), the design is also added, with its projections onto the worst (oblique) axis.}
+
+\item{trace}{an optional boolean. Turn it to FALSE if you want no verbosity.}
+
+\item{lines.lwd}{optional number specifying the width of the straight lines involved in the graphical outputs (axis and projections)}
+
+\item{lines.lty}{optional character string specifying the type of the straight lines involved in the graphical outputs (axis and projections)}
+
+\item{...}{optional graphical parameters of plot function, to draw the RSS curve.}
+}
+\value{
+a list with components:
+}
+\description{
+For a 2-dimensional design, the 2D radial scanning statistic (RSS) scans angularly the domain. In each direction, it compares the distribution of projected points to their theoretical distribution under the assumption that all design points are drawn from uniform distribution. For a d-dimensional design, all pairs of dimensions are scanned.The RSS detects the defects of low discrepancy sequences or orthogonal arrays, and can be used for selecting space-filling designs.
 }

@@ -20,7 +20,7 @@ Modifying reservoir models so that they are capable of matching observed data (h
 
 This module, along with other associated modules, is an attempt to develop a workflow that combines the use of the OPM tools with tools already existing in R. Particular effort is made to incorporate the excellent set of tools developed by the [DICE](http://dice.emse.fr/) and [ReDICE](http://www.redice-project.org/) consortia to improve complex computer models.
 
-An additional idea that this package would like to support is that of [reproducible research](https://www.practicereproducibleresearch.org/TOC.html).  Reproducible research mixes documentation with computation in a manner that allows the entire modeling process to be reproduced by a third party.  Its' intent is to start with the cruftiest of data, and implement documentation and calculation of the entire workflow to the final product.
+An additional idea that this package would like to support is that of [reproducible research](https://www.practicereproducibleresearch.org/TOC.html).  Reproducible research mixes documentation with computation in a manner that allows the entire modeling process to be reproduced by a third party.  Its' intent is to start with the cruftiest of data, and implement documentation and calculation of the entire workflow to the final product.  An excellent introduction to reproducible research is available here: [Karl Broman's course "Tools for Reproducible Research"](http://kbroman.org/Tools4RR/)
 
 This approach has great value in an environment where multiple partners may be contributing their expertise, and all need to agree on the results before a project may move forward.  For the purposes of a reservoir modeling workflow, a reproducible research approach is more aspirational, than currently achievable.  The variety of data necessary, the tools necessary to process the data, and level of interpretation required, make the process difficult to completely reproduce.  The workflow developed here envisions creating a GitHub repository for a model, using RMarkdown for documentation, and RStudio for running, analyzing, and committing to version control. Tools will gradually be added to make different parts of the process more reproducible.
 
@@ -35,9 +35,9 @@ In history match or development scenario projects, it is expected that most of t
 
 Three functions are needed to run a very simple model:
 
-1. ***runflow*** allows you to run the simulator, if you have an appropriate Eclipse style deck.
-2. ***eclsum*** converts Eclipse style summary output to a csv file, and loads it.
-3. ***ploteach*** plots the simulator output data from the csv file.
+1. ***RunFlow*** allows you to run the simulator, if you have an appropriate Eclipse style deck.
+2. ***EclSum*** converts Eclipse style summary output to a csv file, and loads it.
+3. ***PlotEach*** plots the simulator output data from the csv file.
 
 Here is an example running the [SPE1](http://www.ipt.ntnu.no/~kleppe/pub/SPE-COMPARATIVE/papers/first.pdf) test deck from the first SPE Comparative Solution Project.  It is a very simple model with one producer and one gas injector.  There is no movable water in the model.
 
@@ -45,9 +45,9 @@ Here is an example running the [SPE1](http://www.ipt.ntnu.no/~kleppe/pub/SPE-COM
 library(runOPM)
 # get the SPE1 deck form the package extdata directory
 deck <- system.file("extdata", "SPE1_CASE1.DATA", package = "runOPM")
-runflow(deck, basedir="tmp", wait=TRUE)
-rslts <- eclsum(casename="SPE1_CASE1", basedir="tmp")
-ploteach(rslts, wgnames="FIELD")
+RunFlow(deck, basedir = "tmp", wait = TRUE)
+rslts <- EclSum(casename = "SPE1_CASE1", basedir = "tmp")
+PlotEach(rslts, wgnames = "FIELD")
 ```
 ```{r cleanup_simple, echo=FALSE, warning=FALSE, message=FALSE, eval=TRUE}
 unlink("tmp", recursive = TRUE, force = TRUE)
@@ -69,7 +69,7 @@ The history match general workflow is:
 6. Rinse and repeat.
 
 ### History Data
-The history data needs to be in a "long" format comparable to that created with the ***eclsum*** function.  The ***importhist*** function will read a column oriented "wide" format csv or Excel file, and add it to the project file for later use.
+The history data needs to be in a "long" format comparable to that created with the ***EclSum*** function.  The ***importhist*** function will read a column oriented "wide" format csv or Excel file, and add it to the project file for later use.
 
 The history data needs to be on the same dates as the simulation model output.  Future enhancements will implement some interpolation to ease this requirement somewhat, but it still is a good idea.  This version of the workflow only deals with data measured at the well.  Future efforts will attempt to incorporate 4D type data.
 
