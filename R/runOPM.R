@@ -7,6 +7,7 @@
 #' @importFrom Rcpp sourceCpp
 NULL
 
+# use "tools::package_native_routine_registration_skeleton(".")" to register c++ 
 # to keep CRAN happy with ggplot in the 04_plotting.R file
 globalVariables(c("DATE", "VALUE", "CASENAME"))
 
