@@ -293,9 +293,11 @@ dbg <- TRUE
 ddbg <- FALSE
 spe9vars <- list()
 if (ddbg) {
-  basedir <- "/home/gerw/gitrepos/runOPM/inst/extdata/sim"
+  basedir <- "/home/gerw/gitrepos/runOPM/tests/testthat/spe9hm/"
+  deckdir <- file.path(basedir, "DECKS")
+  griddir <- file.path(deckdir, "GRID")
   template <- "SPE9.TEMPLATE"
-  templatepath <- file.path(basedir, "DECKS", template)
+  templatepath <- file.path(deckdir, template)
   spe9vars <- ReadTemplate(template = template, basedir = basedir)
   spe9vars <- EditVar(spe9vars, pattern = "PORO", truncLow = 0.1,
                       truncHigh = 2, param1 = 0.1, param2 = 2.0,

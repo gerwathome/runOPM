@@ -7,8 +7,8 @@ if (dir.exists("testsim")) {
 #==============================================================================
 deck1 <-  system.file("extdata", "SPE1_CASE1.DATA", package = "runOPM")
 deck2 <-  system.file("extdata", "SPE9.DATA", package = "runOPM")
-inc1 <-  system.file("extdata", "TOPSVALUES.INC", package = "runOPM")
-inc2 <-  system.file("extdata", "PERMVALUES.INC", package = "runOPM")
+inc1 <-  system.file("extdata", "GRID", "TOPSVALUES.INC", package = "runOPM")
+inc2 <-  system.file("extdata", "GRID", "PERMVALUES.INC", package = "runOPM")
 #------------------------------------------------------------------------------
 test_that("Keyword labeling works", {
   expect_equal(.KW2Descrip("WOPR"), "Oil Prod Rate")
@@ -24,8 +24,10 @@ test_that("Keyword labeling works", {
 #==============================================================================
 RunFlow(deck1, basedir = "testsim", wait = TRUE)
 deckdir <- file.path("testsim","DECKS")
-file.copy(inc1, deckdir)
-file.copy(inc2, deckdir)
+griddir <- file.path(deckdir,"GRID")
+if (!dir.exists(griddir)) {dir.create(griddir)}
+file.copy(inc1, griddir)
+file.copy(inc2, griddir)
 # This is very slow; consider simplfying the SPE9 deck
 RunFlow(deck2, basedir = "testsim", wait = TRUE)
 #------------------------------------------------------------------------------
@@ -91,5 +93,5 @@ test_that("EclSum works", {
   expect_equal_to_reference(results, "results.rds")
 })
 #==============================================================================
-# clean up
-unlink("testsim", recursive = TRUE)
+# defer clean up so that following tests may use sim data
+# unlink("testsim", recursive = TRUE)

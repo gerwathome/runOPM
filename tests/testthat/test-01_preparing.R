@@ -4,6 +4,12 @@ context("Create project directories")
 if (dir.exists("testdir")) {
   unlink("testdir", recursive = TRUE)
 }
+if (dir.exists("testsim")) {
+  unlink("testsim", recursive = TRUE)
+}
+if (dir.exists("spe9hm")) {
+  unlink("spe9hm", recursive = TRUE)
+}
 #==============================================================================
 projdirs <- c(".", "./testdir", "./testdir/DECKS", "./testdir/OUTPUT",  "./testdir/REPORTS")
 #------------------------------------------------------------------------------
