@@ -6,10 +6,10 @@
 \title{Create an experimental design using a template object.}
 \usage{
 ExpDes(obj = NULL, type = "fpb", basedir = ".",
-  objname = deparse(substitute(obj)), ...)
+  objname = obj$template_name, ...)
 
 \method{ExpDes}{hmvars}(obj = NULL, type = "fpb", basedir = ".",
-  objname = deparse(substitute(obj)), ...)
+  objname = obj$template_name, ...)
 }
 \arguments{
 \item{obj}{The name of an hmvars object.}

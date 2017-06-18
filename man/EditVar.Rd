@@ -6,10 +6,10 @@
 \title{Edit parameters in a template object.}
 \usage{
 EditVar(obj = NULL, pattern = NULL, basedir = ".",
-  objname = deparse(substitute(obj)), ...)
+  objname = obj$template_name, ...)
 
 \method{EditVar}{hmvars}(obj = NULL, pattern = NULL, basedir = ".",
-  objname = deparse(substitute(obj)), ...)
+  objname = obj$template_name, ...)
 }
 \arguments{
 \item{obj}{The name of an hmvars object.}
@@ -18,7 +18,7 @@ EditVar(obj = NULL, pattern = NULL, basedir = ".",
 
 \item{basedir}{The path to the base directory of a simulation project.  The default is the current directory.  This is used to store the edited object.}
 
-\item{objname}{This is used to save the edited object to a file. It defaults to the name of the hmvars object.}
+\item{objname}{This is used to save the edited object to a file. It defaults to the name of the tempate used to create the object}
 
 \item{...}{A series of param=value pairs that define how the parameter values associated with a particular variable identified by "pattern" are to be set.}
 }

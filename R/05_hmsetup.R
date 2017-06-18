@@ -7,10 +7,10 @@
 #' @export
 #------------------------------------------------------------------------------
 ReadTemplate <- function(template = NULL, basedir="."){
-  dbg <- TRUE
-  ddbg <- FALSE
   basedir <- normalizePath(basedir)
   decksdir <- file.path(basedir,"DECKS")
+  template_name <- basename(template)
+  template_name <- gsub("\\..+$", "", template_name, perl = TRUE)
   tdp <- character()
   if (!is.null(template)) {
     if (file.exists(template)) {
@@ -28,11 +28,9 @@ ReadTemplate <- function(template = NULL, basedir="."){
   td <- readLines(tdp)
   varpat <- "^.+{\\$(\\w+)}.+$"
   varnames <- grep(varpat, td, value = TRUE, perl = TRUE)
-  if (ddbg) {print(varnames)}
   varnames <- gsub(varpat, "\\1", varnames, perl = TRUE)
-  if (ddbg) {print(varnames)}
   nvars <- length(varnames)
-  # There should probably be a way to have an undefined number of parameters and
+  # There should be a way to have an undefined number of parameters and
   # discrete values.  Discrete values are expected to be INCLUDE file names.
   #  Also need to figure out how to interpose a function between variable
   # definition and writing out the deck.
@@ -51,51 +49,49 @@ ReadTemplate <- function(template = NULL, basedir="."){
                                  stringsAsFactors = FALSE
   ),
   expDesignCoded = data.frame(),
-  expDesignUncoded = data.frame()
+  expDesignUncoded = data.frame(),
+  template_name = template_name
   )
   class(hmvars) <- "hmvars"
   hmvars$vars$name <- varnames
   hmvars$vars$distribution <- rep("unif",nvars)
   if (!dir.exists(decksdir)) {decksdir <- normalizePath(".")}
   rdsfn <- file.path(decksdir, paste0(objname, ".rds"))
-  if (ddbg) {print(paste0("rdsfn_61 = ", rdsfn))}
   saveRDS(hmvars, file = rdsfn)
   return(hmvars)
 } # end function
-
+#==============================================================================
 #' @title Edit parameters in a template object.
 #' @description This function allows editing of parameters in the hmvars object as a function of variable name.
 #' @param obj The name of an hmvars object.
 #' @param pattern A perl compatible regular expression identifying the variable name for which parmeters are being edited.
 #' @param basedir The path to the base directory of a simulation project.  The default is the current directory.  This is used to store the edited object.
 #' @param ... A series of param=value pairs that define how the parameter values associated with a particular variable identified by "pattern" are to be set.
-#' @param objname This is used to save the edited object to a file. It defaults to the name of the hmvars object.
+#' @param objname This is used to save the edited object to a file. It defaults to the name of the tempate used to create the object
 #' @details I'm thinking about it.
 #' @return Returns a template object, and writes out a template object file.
 #' @export
-EditVar <- function(obj=NULL, pattern=NULL, basedir=".", objname = deparse(substitute(obj)), ...) {
+#------------------------------------------------------------------------------
+EditVar <- function(obj=NULL, pattern=NULL, basedir=".",
+                    objname = obj$template_name, ...) {
   UseMethod("EditVar", obj)
 }
 
 #' @export
-EditVar.default <- function(obj=NULL, pattern=NULL, basedir=".", objname = deparse(substitute(obj)), ...){
+EditVar.default <- function(obj=NULL, pattern=NULL, basedir=".",
+                            objname = obj$template_name, ...){
   stop("EditVar only implemented for hmvars.")
 }
 
 #' @export
 #' @rdname EditVar
-EditVar.hmvars <- function(obj=NULL, pattern=NULL, basedir=".", objname = deparse(substitute(obj)), ...){
-  dbg <- TRUE
-  ddbg <- FALSE
+EditVar.hmvars <- function(obj=NULL, pattern=NULL, basedir=".",
+                           objname = obj$template_name, ...){
+  # an alternate default name:  objname = deparse(substitute(obj))
   objname <- objname
-  if (ddbg) {print(paste0("objname_84 = ", objname))}
   if (is.null(obj)) {stop("The object to edited must be supplied")}
   varnames <- obj$vars$name
   editlines <- grep(pattern,obj$vars$name, perl = TRUE)
-  if (ddbg) {
-    print("editlines:  ")
-    print(paste(editlines, collapse = ", "))
-  }
   if (is.null(pattern) | !any(editlines)) {
     stop("A pattern to match one or more of the following variables, which ",
          "you wish to edit, must be supplied:  ",
@@ -111,12 +107,6 @@ EditVar.hmvars <- function(obj=NULL, pattern=NULL, basedir=".", objname = depars
   }
   for (i in editlines) {
     for (param in toedit) {
-      if (ddbg) {
-        print(paste("param: ", param,
-                    "line :", i,
-                    ",  from value:  ", passedparams[param],
-                    ", to value:  ", obj$vars[i,param]))
-      }
       obj$vars[i,param] <- passedparams[param]
     }
   }
@@ -124,10 +114,10 @@ EditVar.hmvars <- function(obj=NULL, pattern=NULL, basedir=".", objname = depars
   decksdir <- file.path(basedir,"DECKS")
   if (!dir.exists(decksdir)) {decksdir <- normalizePath(".")}
   rdsfn <- file.path(decksdir, paste0(objname, ".rds"))
-  if (ddbg) {print(paste0("rdsfn_120 = ", rdsfn))}
-  saveRDS(obj, file = rdsfn)
+   saveRDS(obj, file = rdsfn)
   return(obj)
 }
+#==============================================================================
 #' @title Create an experimental design using a template object.
 #' @description This function reads parameters in the hmvars object as a function of variable name, and uses them in constructing an experimental design.
 #' @param obj The name of an hmvars object.
@@ -138,22 +128,22 @@ EditVar.hmvars <- function(obj=NULL, pattern=NULL, basedir=".", objname = depars
 #' @details I'm thinking about it.
 #' @return Returns a template object, and writes out a template object file.
 #' @export
-ExpDes <- function(obj=NULL, type = "fpb", basedir=".", objname = deparse(substitute(obj)), ...) {
+ExpDes <- function(obj=NULL, type = "fpb", basedir=".",
+                   objname = obj$template_name, ...){
   UseMethod("ExpDes", obj)
 }
-
 #' @export
-ExpDes.default <- function(obj=NULL, type = "fpb", basedir=".", objname = deparse(substitute(obj)), ...){
+#------------------------------------------------------------------------------
+ExpDes.default <- function(obj=NULL, type = "fpb", basedir=".",
+                           objname = obj$template_name, ...){
   stop("ExpDes only implemented for hmvars.")
   }
 
 #' @export
 #' @rdname ExpDes
-ExpDes.hmvars <- function(obj=NULL, type = "fpb", basedir=".", objname = deparse(substitute(obj)), ...){
-  dbg <- TRUE
-  ddbg <- FALSE
+ExpDes.hmvars <- function(obj=NULL, type = "fpb", basedir=".",
+                          objname = obj$template_name, ...){
   objname <- objname
-  if (ddbg) {print(paste0("objname_141 = ", objname))}
   factor.names <- obj$vars$name
   if (type == "fpb") {
     nruns <- ceiling((length(factor.names) + 1 ) / 4) * 4
@@ -188,11 +178,10 @@ ExpDes.hmvars <- function(obj=NULL, type = "fpb", basedir=".", objname = deparse
   decksdir <- file.path(basedir,"DECKS")
   if (!dir.exists(decksdir)) {decksdir <- normalizePath(".")}
   rdsfn <- file.path(decksdir, paste0(objname, ".rds"))
-  if (ddbg) {print(paste0("rdsfn_175 = ", rdsfn))}
   saveRDS(obj, file = rdsfn)
   return(obj)
 } # end function
-
+#==============================================================================
 #' @title Create a set of decks using a deck template and an experimental design.
 #' @description This function reads an experimental design from a hmvars object and combines it with the appropriate deck template to create a series of decks implementing the experimental design.
 #' @param obj The name of an hmvars object.
@@ -203,6 +192,7 @@ ExpDes.hmvars <- function(obj=NULL, type = "fpb", basedir=".", objname = deparse
 #' @details I'm thinking about it.
 #' @return Returns a list of deck files suitable for use in submitting the cases
 #' @export
+#------------------------------------------------------------------------------
 BuildDecks <- function(obj, template, basedir=".", overwrite = FALSE, cases = NULL) {
   UseMethod("BuildDecks", obj)
 }
@@ -215,8 +205,6 @@ BuildDecks.default <- function(obj, template, basedir=".", overwrite = FALSE, ca
 #' @export
 #' @rdname BuildDecks
 BuildDecks.hmvars <- function(obj, template, basedir=".", overwrite = FALSE, cases = NULL){
-  dbg <- TRUE
-  ddbg <- FALSE
   basedir <- normalizePath(basedir)
   decksdir <- file.path(basedir,"DECKS")
   if (!dir.exists(decksdir)) {decksdir <- normalizePath(".")}
@@ -268,7 +256,7 @@ BuildDecks.hmvars <- function(obj, template, basedir=".", overwrite = FALSE, cas
   }
   return(decklist)
 } # end function
-
+#==============================================================================
 .Coded2Uncoded <- function(coded, lu, hu, lc = -1, hc = 1){
   # lu = low uncoded; hu = high uncoded
   # lc = low coded; hc = high coded
@@ -281,7 +269,7 @@ BuildDecks.hmvars <- function(obj, template, basedir=".", overwrite = FALSE, cas
   uncoded <- m * coded + b
   return(uncoded)
 }
-
+#==============================================================================
 .Uncoded2Coded <- function(uncoded,lu, hu, lc = -1, hc = 1){
   # lu = low uncoded; hu = high uncoded
   # lc = low coded; hc = high coded
@@ -294,41 +282,3 @@ BuildDecks.hmvars <- function(obj, template, basedir=".", overwrite = FALSE, cas
   coded <- m * uncoded + b
   return(coded)
 }
-
-# testing during development
-# I know it's pathetic
-dbg <- TRUE
-ddbg <- FALSE
-spe9vars <- list()
-if (ddbg) {
-  basedir <- "/home/gerw/gitrepos/runOPM/tests/testthat/spe9hm/"
-  deckdir <- file.path(basedir, "DECKS")
-  griddir <- file.path(deckdir, "GRID")
-  template <- "SPE9.TEMPLATE"
-  templatepath <- file.path(deckdir, template)
-  spe9vars <- ReadTemplate(template = template, basedir = basedir)
-  spe9vars <- EditVar(spe9vars, pattern = "PORO", truncLow = 0.1,
-                      truncHigh = 2, param1 = 0.1, param2 = 2.0,
-                      basedir = basedir)
-  spe9vars <- EditVar(spe9vars, pattern = "PERM", truncLow = 0.1,
-                      truncHigh = 1.5, param1 = 0.1, param2 = 2.0,
-                      basedir = basedir)
-  spe9vars <- ExpDes(spe9vars, type = "fpb",
-                     basedir = basedir)
-  # cases: either a list of lines from uncoded exp design or NULL,
-  #        indicating all of the list
-  # overwrite: TRUE => overwrite all
-  #            FALSE => don't overwrite anything
-  #            NULL => overwrite decks/cases older than obj/decklist
-  spe9decks <- BuildDecks(spe9vars, template = templatepath,  basedir = basedir,
-                          overwrite = NULL, cases = NULL)
-  ok <- RunFlow(spe9decks[1:3], basedir = basedir, overwrite = NULL, wait = TRUE)
-  if (!is.null(ok)) {print(paste0("value of ok is ", ok))}
-  spe9rslts <- EclSum(basedir = basedir)
-#  ploteach(spe9rslts, wgnames="FIELD")
-}
-if (ddbg) {View(spe9vars$vars)}
-if (ddbg) {View(spe9vars$expDesignCoded)}
-if (ddbg) {View(spe9vars$expDesignUncoded)}
-
-

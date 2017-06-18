@@ -81,6 +81,7 @@ test_that(".Wide2Long works", {
   expect_equal(class(long$CASE), "character")
   expect_equal(class(long$VALUE), "numeric")
   expect_equal(length(long$DATE), length(wide$DATE) * (ncol(wide) - 3))
+  # need to think of a way to be sure long and wide values are the same
 })
 #==============================================================================
 results <- EclSum(casename = case, basedir = basedir)
