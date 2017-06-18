@@ -409,7 +409,7 @@ WWPR
 SCHEDULE
 
 RPTRST
-	'BASIC=4' /
+	'BASIC=1' /
 WELSPECS
 -- Column 3: I-value of well head or heel
 -- Column 4: J-value of well head or heel

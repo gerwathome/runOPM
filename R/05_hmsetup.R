@@ -269,18 +269,26 @@ BuildDecks.hmvars <- function(obj, template, basedir=".", overwrite = FALSE, cas
   return(decklist)
 } # end function
 
-.Coded2Uncoded <- function(coded, lu, hu, lc=-1, hc=1){
+.Coded2Uncoded <- function(coded, lu, hu, lc = -1, hc = 1){
   # lu = low uncoded; hu = high uncoded
   # lc = low coded; hc = high coded
+  if (lu >= hu) {stop(paste("The low uncoded value must be less than the high",
+                            "uncoded value"))}
+  if (lc >= hc) {stop(paste("The low coded value must be less than the high",
+                            "coded value"))}
   m <- (hu - lu) / (hc - lc)
   b <- lu - m * lc
   uncoded <- m * coded + b
   return(uncoded)
 }
 
-.Uncoded2Coded <- function(uncoded,lu, hu, lc=-1, hc=1){
+.Uncoded2Coded <- function(uncoded,lu, hu, lc = -1, hc = 1){
   # lu = low uncoded; hu = high uncoded
   # lc = low coded; hc = high coded
+  if (lu >= hu) {stop(paste("The low uncoded value must be less than the high",
+                            "uncoded value"))}
+  if (lc >= hc) {stop(paste("The low coded value must be less than the high",
+                            "coded value"))}
   m <- (hc - lc) / (hu - lu)
   b <- lc - m * lu
   coded <- m * uncoded + b
