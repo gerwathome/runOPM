@@ -22,7 +22,8 @@ Imports: ggplot2,
     truncdist,
     minimaxdesign,
     fOptions,
-    Rcpp
+    Rcpp,
+    readxl
 Suggests: knitr,
     rmarkdown,
     testthat,

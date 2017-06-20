@@ -18,7 +18,7 @@ This vignette will eventually document a workflow for using the OPM tools, along
 ## The Vision
 Modifying reservoir models so that they are capable of matching observed data (history matching) and making reasonable predictions has long been a very time consuming and arduous task, with often somewhat disappointing results.  In recent years there have been many attempts to develop computer assisted methods to both improve the results and to decrease the time and effort necessary to develop models.  These methods have had mixed results, and have often been proprietary. ***(add references here)***
 
-This module, along with other associated modules, is an attempt to develop a workflow that combines the use of the OPM tools with tools already existing in R. Particular effort is made to incorporate the excellent set of tools developed by the [DICE](http://dice.emse.fr/) and [ReDICE](http://www.redice-project.org/) consortia to improve complex computer models.
+This module, along with other associated modules, is an attempt to develop a workflow that combines the use of the OPM tools with tools already existing in R. Particular effort is made to incorporate the excellent set of tools developed by the [DICE](http://dice.emse.fr/) and [ReDICE](http://www.redice-project.org/) consortia to improve complex computer models.  Initial efforts will focus on trying to incorporate portions of five R packages that implement a coherent workflow.  These packages are [DiceDesign](https://CRAN.R-project.org/package=DiceDesign), [DiceEval](https://CRAN.R-project.org/package=DiceEval), [DiceKriging](https://CRAN.R-project.org/package=DiceKriging), [DiceOptim](https://CRAN.R-project.org/package=DiceOptim), and [GPareto](https://CRAN.R-project.org/package=GPareto). The first four packages have links to useful published articles in their "Citation" sections, and the last one has a useful vignette.
 
 An additional idea that this package would like to support is that of [reproducible research](https://www.practicereproducibleresearch.org/TOC.html).  Reproducible research mixes documentation with computation in a manner that allows the entire modeling process to be reproduced by a third party.  Its' intent is to start with the cruftiest of data, and implement documentation and calculation of the entire workflow to the final product.  An excellent introduction to reproducible research is available here: [Karl Broman's course "Tools for Reproducible Research"](http://kbroman.org/Tools4RR/)
 
@@ -69,7 +69,7 @@ The history match general workflow is:
 6. Rinse and repeat.
 
 ### History Data
-The history data needs to be in a "long" format comparable to that created with the ***EclSum*** function.  The ***importhist*** function will read a column oriented "wide" format csv or Excel file, and add it to the project file for later use.
+The history data needs to be in a "long" format comparable to that created with the ***EclSum*** function.  The ***ImportHist*** function will read a column oriented "wide" format csv or Excel file, and add it to the project file for later use.
 
 The history data needs to be on the same dates as the simulation model output.  Future enhancements will implement some interpolation to ease this requirement somewhat, but it still is a good idea.  This version of the workflow only deals with data measured at the well.  Future efforts will attempt to incorporate 4D type data.
 
@@ -115,4 +115,9 @@ discussion <- c("absolute error", "relative error", "error trends", "Pareto opti
 ## History Matching Example
 Unfortunately, publicly available history matching data sets are difficult to come by, especially if one is not associated with a university, e.g. [Norne](http://www.ipt.ntnu.no/~norne/wiki/data/media/english/Norne_License_Agreement_2016.pdf).  Should anyone reading this have access to a suitable Creative Commons licensed data set, I would appreciate a note to gerwathome at gmail.com.  Until I can find a suitable data set, I will create an entirely synthetic simple data set based on [SPE9](http://www.ipt.ntnu.no/~kleppe/pub/SPE-COMPARATIVE/papers/ninth.pdf).  The model has ~9000 cells with a geostatistically derived permeability distribution, one injector, 25 producers and 900 days of history.  It will be assumed that the model as given provides the correct "history".  A set of geologic regions will be created using the porosity and permeability.  These regions will be assigned an incorrect average permeabilty, and the history matching process will try to match production by adjusting region permeability.
 
+```{r copy_to_docs, echo=FALSE, warning=FALSE, message=FALSE, eval=TRUE, results='hide'}
+from <- file.path(getwd(),"usingOPM.html")
+to <- file.path("../docs/","index.html")
+file.copy(from, to, overwrite = TRUE)
+```
 

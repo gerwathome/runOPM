@@ -2,14 +2,16 @@
 % Please edit documentation in R/06_runhm.R
 \name{CalcErrs}
 \alias{CalcErrs}
-\title{blah}
+\title{Calculate the differences between the base case and the simulation runs}
 \usage{
-CalcErrs(template = NULL, basedir = ".")
+CalcErrs(hmvars = NULL, basecase = NULL, basedir = ".")
 }
 \arguments{
-\item{template}{blah}
+\item{hmvars}{The hmvars object used to create the runs.}
 
-\item{basedir}{blah}
+\item{basecase}{The case against which all others will be compared.}
+
+\item{basedir}{The path to the base directory of a simulation project.  The default is the current directory.}
 }
 \value{
 blah
@@ -18,5 +20,13 @@ blah
 blah
 }
 \details{
-blah
+There are numerous ways to judge how well the model fits the data.  We are going to assume that a good solution has four characteristics:  first, the mean normalized absolute error is minimized; second, the mean normalized error is minimized; third, the errors are normally distributed; and fourth, the errors have no trend with time.
+
+First it is necessary to define the timesteps at which errors are going to be estimated.   The default dates will be those of the base case, and all other case values will need to be available at those dates (or interpolated to those dates, eventually).
+
+Next the difference between a case and the base will be called error.  The errors for each Well/Group, Keyword, and Date over all of the cases run will be fit to a normal distribution.  The P10 and P90 values will be used to normalize the errors.
+
+It is not absolute clear which populations should be used for picking high and low values for normalization.  Oil rate error might be best normalized over the entire history, but cumulative oil production would be expected to have larger absolute errors later in the field life.  The quality of some types of measurement vary with the absolute value.  For example, water cut value estimates may have significantly larger errors at higher absolute values.  This is because water production tends to slug when water becomes the continuous phase in the wellbore, and an accurate measurement requires a longer period of time.  Operations people tend to frown on longer tests, because it often leads to lower overall production.
+
+The quality statistics will be calculated using the normalized errors.  The shapiro.test will be used for normality assessment.  The slope of a linear model with time will be used for trend assessment.  The mean absolute and relative errors will be caculated as expected.
 }

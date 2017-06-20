@@ -2,21 +2,21 @@
 % Please edit documentation in R/06_runhm.R
 \name{ImportHist}
 \alias{ImportHist}
-\title{blah}
+\title{Import production history}
 \usage{
 ImportHist(ssheetfile = NULL, basedir = ".")
 }
 \arguments{
-\item{ssheetfile}{blah}
+\item{ssheetfile}{The full path to a .csv, .xls, or .xlsx file containing production history data.}
 
-\item{basedir}{blah}
+\item{basedir}{The path to the base directory of a simulation project.  The default is the current directory.}
 }
 \value{
-blah
+A long format data frame with production data.
 }
 \description{
-blah
+Import production history into a long format data frame comparable to the way simulation output is stored.
 }
 \details{
-blah
+The spreadsheet file should include a single sheet that starts with a DATE column, followed by desired data. The DATE should be in "%d-%b-%Y" format, e.g. 01-Jan-2017.  The date format requirement will be relaxed when I have time.  The first row should be Eclipse style names with the format Keyword:Name, as WBHP:PROD1.  Optionally, a DAYS column may be added.  DAYS is the number of days since the start of the simulatiion, and the default is NA.  The case name assigned to this data will be the basename of the input file, without the extent.
 }

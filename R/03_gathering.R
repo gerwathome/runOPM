@@ -32,15 +32,14 @@ EclSum <- function(casename = "^.+", basedir = "."){
       outfile <- file.path(basedir, "OUTPUT", case, paste0(case,".csv"))
       wide_raw <- .GetECL(case, infile, outfile)
       if (is.data.frame(wide_raw)) {
-        wide <- .CleanWide(case, wide_raw)
+         wide <- .CleanWide(case, wide_raw)
         # wide <- .AddWOR(wide)
         # wide <- .AddGOR(wide)
         dupcase <- long$CASENAME == case
         long <- long[!dupcase,]
         long <- rbind(long, .Wide2Long(wide))
         readr::write_csv(long, projsum)
-        return(long)
-      }else{warning("Failed to parse ", infile)}
+       }else{warning("Failed to parse ", infile)}
     } # end for loop
   } else {
     warning(paste0("Failed to find and summary files in directory ",
@@ -73,7 +72,8 @@ EclSum <- function(casename = "^.+", basedir = "."){
 }
 #------------------------------------------------------------------------------
 .CleanWide <- function(case, wide_raw){
-  wide <- wide_raw[, colSums(wide_raw != 0, na.rm = TRUE) > 0]
+#  wide <- wide_raw[, colSums(wide_raw != 0, na.rm = TRUE) > 0]
+  wide <- wide_raw
   grep("F(...)", colnames(wide), perl = TRUE)
   colnames(wide) <- sub("F(...)", "W\\1.FIELD", colnames(wide),
                         perl = TRUE)
@@ -82,7 +82,7 @@ EclSum <- function(casename = "^.+", basedir = "."){
   colnames(wide) <- gsub(inxyzpat, outxyzpat, colnames(wide),
                          perl = TRUE)
   wide$DATE <- as.Date(wide$DATE, "%d-%b-%Y")
-  wide <- data.frame(CASE = rep(case,length(wide$DATE)),wide,
+  wide <- data.frame(CASE = rep(case, length(wide$DATE)), wide,
                      stringsAsFactors = FALSE)
   return(wide)
 }
@@ -104,7 +104,7 @@ EclSum <- function(casename = "^.+", basedir = "."){
   kw.wgn <- vars[grep(pat, vars, perl = TRUE)]
   kw <- sub(pat, "\\1", kw.wgn, perl = TRUE)
   wgn <- sub(pat, "\\2", kw.wgn, perl = TRUE)
-  ndays <- length(df$DAYS)
+  ndays <- length(df$DATE)
   for (i in 1:length(wgn)) {
     tdfl <- data.frame(
       CASENAME = df[,"CASE"],
