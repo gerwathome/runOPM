@@ -4,12 +4,14 @@
 \alias{ImportHist}
 \title{Import production history}
 \usage{
-ImportHist(ssheetfile = NULL, basedir = ".")
+ImportHist(ssheetfile = NULL, basedir = ".", format = "\%d-\%b-\%Y")
 }
 \arguments{
 \item{ssheetfile}{The full path to a .csv, .xls, or .xlsx file containing production history data.}
 
 \item{basedir}{The path to the base directory of a simulation project.  The default is the current directory.}
+
+\item{format}{The date format in the csv file being imported.}
 }
 \value{
 A long format data frame with production data.

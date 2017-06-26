@@ -11,6 +11,6 @@ unlink("tmp", recursive = TRUE, force = TRUE)
 
 ## ----copy_to_docs, echo=FALSE, warning=FALSE, message=FALSE, eval=TRUE, results='hide'----
 from <- file.path(getwd(),"usingOPM.html")
-to <- file.path("../docs/","index.html")
-file.copy(from, to, overwrite = TRUE)
+to <- file.path("../docs","index.html")
+file.copy(from = from, to = to, overwrite = TRUE)
 

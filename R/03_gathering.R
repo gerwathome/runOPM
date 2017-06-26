@@ -10,20 +10,11 @@
 EclSum <- function(casename = "^.+", basedir = "."){
   basedir <- normalizePath(basedir)
   sumfiles <- .FindSummary(basedir = basedir, casename = casename)
-  long <- data.frame(
-    CASENAME = character(),
-    DAYS = numeric(),
-    DATE = as.Date(character()),
-    WGNAME = character(),
-    KEYWORD = character(),
-    VALUE = numeric(),
-    UNITS = character(),
-    COMMENT = character(),
-    stringsAsFactors = FALSE)
+  long <- .LongDefinition()
   projsum <- file.path(basedir,"REPORTS","PROJSUM.csv")
   if (file.exists(projsum)) {
     # use readr here because this file may get very large
-    long <- readr::read_csv(projsum, col_types = readr::cols())
+    long <- readr::read_csv(projsum, col_types = .LongColSpec())
     }
   if (length(sumfiles) > 0) {
     for (infile in sumfiles) {
@@ -81,45 +72,36 @@ EclSum <- function(casename = "^.+", basedir = "."){
   outxyzpat <- "\\1_\\2_\\3"
   colnames(wide) <- gsub(inxyzpat, outxyzpat, colnames(wide),
                          perl = TRUE)
+  # the output date will be default R format of "%d-%b-%Y"
   wide$DATE <- as.Date(wide$DATE, "%d-%b-%Y")
   wide <- data.frame(CASE = rep(case, length(wide$DATE)), wide,
                      stringsAsFactors = FALSE)
   return(wide)
 }
 #------------------------------------------------------------------------------
-.Wide2Long <- function(df){
-  dfl <- data.frame(
-    CASENAME = character(),
-    DAYS = numeric(),
-    DATE = as.Date(character()),
-    WGNAME = character(),
-    KEYWORD = character(),
-    VALUE = numeric(),
-    UNITS = character(),
-    COMMENT = character(),
-    stringsAsFactors = FALSE)
+.Wide2Long <- function(wide){
   pat <- "^(\\w+)\\.(\\w+)$";
   #  pat <- "^(\\w+):(\\w+)$";
-  vars <-  colnames(df)
+  vars <-  colnames(wide)
   kw.wgn <- vars[grep(pat, vars, perl = TRUE)]
   kw <- sub(pat, "\\1", kw.wgn, perl = TRUE)
   wgn <- sub(pat, "\\2", kw.wgn, perl = TRUE)
-  ndays <- length(df$DATE)
+  ndays <- length(wide$DATE)
+  long <- .LongDefinition()
   for (i in 1:length(wgn)) {
-    tdfl <- data.frame(
-      CASENAME = df[,"CASE"],
-      DAYS = df[,"DAYS"],
-      DATE = df[,"DATE"],
-      WGNAME = rep(wgn[i],ndays),
-      KEYWORD = rep(kw[i],ndays),
-      VALUE = df[,kw.wgn[i]],
-      UNITS = rep(.KW2Units(kw[i]),ndays),
-      COMMENT = "",
-      stringsAsFactors = FALSE)
-    dfl <- rbind(dfl,tdfl)
+    tlong <- .LongDefinition(ndays)
+    tlong$CASENAME <- wide[,"CASE"]
+    tlong$DAYS <- wide[,"DAYS"]
+    tlong$DATE <- wide[,"DATE"]
+    tlong$WGNAME <- rep(wgn[i],ndays)
+    tlong$KEYWORD <- rep(kw[i],ndays)
+    tlong$VALUE <- wide[,kw.wgn[i]]
+    tlong$UNITS <- rep(.KW2Units(kw[i]),ndays)
+    tlong$COMMENT <- ""
+    long <- rbind(long,tlong)
   }
-  dfl <- dfl[!is.na(dfl$VALUE),]
-  return(dfl)
+  long <- long[!is.na(long$VALUE),]
+  return(long)
 }
 #------------------------------------------------------------------------------
 #' @title Find a set of Eclipse style input data decks
@@ -324,3 +306,34 @@ EclSum <- function(casename = "^.+", basedir = "."){
   return(title)
 }
 #------------------------------------------------------------------------------
+.LongDefinition <- function(n = 0){
+  long <- data.frame(
+    CASENAME = character(n),
+    DAYS = numeric(n),
+    DATE = as.Date(character(n), "%Y-%m-%d"),
+    WGNAME = character(n),
+    KEYWORD = character(n),
+    VALUE = numeric(n),
+    UNITS = character(n),
+    COMMENT = character(n),
+    ERR = numeric(n),
+    FRAC_ERR = numeric(n),
+    stringsAsFactors = FALSE)
+  return(long)
+}
+#------------------------------------------------------------------------------
+.LongColSpec <- function(){
+  colspec <- readr::cols(
+    CASENAME = readr::col_character(),
+    DAYS = readr::col_integer(),
+    DATE = readr::col_date(format = ""),
+    WGNAME = readr::col_character(),
+    KEYWORD = readr::col_character(),
+    VALUE = readr::col_double(),
+    UNITS = readr::col_character(),
+    COMMENT = readr::col_character(),
+    ERR = readr::col_double(),
+    FRAC_ERR = readr::col_double()
+  )
+  return(colspec)
+}

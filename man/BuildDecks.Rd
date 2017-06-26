@@ -19,7 +19,7 @@ BuildDecks(obj, template, basedir = ".", overwrite = FALSE, cases = NULL)
 
 \item{overwrite}{TRUE means overwrite all; FALSE means don't overwrite anything; NULL (the defaults) means overwrite decks older than the hmvars object.}
 
-\item{cases}{The default is NULL, meaning create a deck for all of the cases in the experimental design.  Alternatively, a list of line numbers for the desired cases may be submitted.}
+\item{cases}{The default is NULL, meaning create a deck for all of the cases in the experimental design.  Alternatively, a list of line numbers in the experimental design for the desired cases may be submitted.}
 }
 \value{
 Returns a list of deck files suitable for use in submitting the cases

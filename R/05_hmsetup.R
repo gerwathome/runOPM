@@ -9,8 +9,6 @@
 ReadTemplate <- function(template = NULL, basedir="."){
   basedir <- normalizePath(basedir)
   decksdir <- file.path(basedir,"DECKS")
-  template_name <- basename(template)
-  template_name <- gsub("\\..+$", "", template_name, perl = TRUE)
   tdp <- character()
   if (!is.null(template)) {
     if (file.exists(template)) {
@@ -50,7 +48,8 @@ ReadTemplate <- function(template = NULL, basedir="."){
   ),
   expDesignCoded = data.frame(),
   expDesignUncoded = data.frame(),
-  template_name = template_name
+  casenames = list(),
+  template_name = objname
   )
   class(hmvars) <- "hmvars"
   hmvars$vars$name <- varnames
@@ -188,7 +187,7 @@ ExpDes.hmvars <- function(obj=NULL, type = "fpb", basedir=".",
 #' @param template The deck template associated with the hmvars object.
 #' @param basedir The path to the base directory of a simulation project.  The default is the current directory.
 #' @param overwrite TRUE means overwrite all; FALSE means don't overwrite anything; NULL (the defaults) means overwrite decks older than the hmvars object.
-#' @param cases The default is NULL, meaning create a deck for all of the cases in the experimental design.  Alternatively, a list of line numbers for the desired cases may be submitted.
+#' @param cases The default is NULL, meaning create a deck for all of the cases in the experimental design.  Alternatively, a list of line numbers in the experimental design for the desired cases may be submitted.
 #' @details I'm thinking about it.
 #' @return Returns a list of deck files suitable for use in submitting the cases
 #' @export

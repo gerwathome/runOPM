@@ -48,9 +48,9 @@ test_that("Finding files works", {
 #==============================================================================
 case <- "SPE1_CASE1"
 basedir <- normalizePath("testsim")
-infile <- .FindSummary(basedir, casename = "SPE1_CASE1")
+infile <- runOPM:::.FindSummary(basedir, casename = "SPE1_CASE1")
 outfile <- file.path(basedir, "OUTPUT", case, paste0(case,".csv"))
-wide_raw <- .GetECL(case, infile, outfile)
+wide_raw <- runOPM:::.GetECL(case, infile, outfile)
 wr_wo_date <- wide_raw[,colnames(wide_raw) != "DATE" & colnames(wide_raw) != "DAYS"]
 summary(wr_wo_date)
 colsums_wide_raw <- as.matrix(t(colSums(wr_wo_date)))
@@ -64,7 +64,7 @@ test_that(".GetECL with the python dependency works", {
   expect_equal(colsums_wide_raw, colsums_gnumeric)
 })
 #==============================================================================
-wide <- .CleanWide(case, wide_raw)
+wide <- runOPM:::.CleanWide(case, wide_raw)
 #------------------------------------------------------------------------------
 test_that(".CleanWide works", {
   expect_true(is.data.frame(wide))
@@ -73,7 +73,7 @@ test_that(".CleanWide works", {
   expect_equal(length(wide$DAYS), length(wide_raw$DAYS))
 })
 #==============================================================================
-long <- .Wide2Long(wide)
+long <- runOPM:::.Wide2Long(wide)
 #------------------------------------------------------------------------------
 test_that(".Wide2Long works", {
   expect_true(is.data.frame(long))
