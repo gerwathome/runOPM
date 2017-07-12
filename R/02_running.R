@@ -1,7 +1,7 @@
-#' @title Run an Open Porous Media reservoir simulation
+#' @title RunFlow:  Run an Open Porous Media reservoir simulation
 #' @description This function deals with the details of running a reservoir simulation model.  One may specify the model deck, the output location, the executable type and version, and the computing resources used to run the job.
 #' @param decknames A character vector with the name and full path to one or more Eclipse style simulation input decks.
-#' @param basedir The base directory of a simulation project, assumed to be the current directory.  If a project directory structure does not exist, one will be created.
+#' @param basedir The path to the base directory of a simulation project.  The default is a subdirectory of the current directory called "tmp".  If a project directory structure does not exist, one will be created.
 #' @param sim_exec one of ("flow", "flow_mpi", "flow_polymer", "flow_sequential", "flow_solvent")
 #' @param restartcase The base name of the deck that this is a restart from.  The output will be put into the base directory.  The default is NULL.
 #' @param sim_version one of c("stable", "latest")
@@ -23,7 +23,7 @@
 #' @export
 #'
 RunFlow <- function(decknames,
-                    basedir=".",
+                    basedir="tmp",
                     sim_exec="flow",
                     restartcase=NULL,
                     sim_version = "stable",

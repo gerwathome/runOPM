@@ -2,14 +2,14 @@
 % Please edit documentation in R/05_hmsetup.R
 \name{ReadTemplate}
 \alias{ReadTemplate}
-\title{Read a deck template, and create a template object.}
+\title{ReadTemplate:  Read a deck template, and create an hmvars object to store variable characteristics and experimental designs.}
 \usage{
-ReadTemplate(template = NULL, basedir = ".")
+ReadTemplate(template = NULL, basedir = "tmp")
 }
 \arguments{
 \item{template}{The basename of an Eclipse style template deck.}
 
-\item{basedir}{The path to the base directory of a simulation project.  The default is the current directory.}
+\item{basedir}{The path to the base directory of a simulation project.  The default is a subdirectory of the current directory called "tmp".}
 }
 \value{
 Returns a template object, and writes out a template object file.

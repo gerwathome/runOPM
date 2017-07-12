@@ -1,13 +1,15 @@
 #' @title Create a project directory to run simulation cases
 #' @description This function sets up a standard directory structure for running one or more simulation cases.
 #' @param deckname The full path to, and name of, a simulation deck.  The default is no deck.  This could also be a deck dataveclate that will later be used to generate multiple case decks.
-#' @param basedir is the base directory of the simulation project.  The default is the current directory.  In general, it is not a good idea to use the current directory, as it may lead to confusion or overwriting of files.  If a string is supplied to the basedir argument, a subdirectory of the current directory will be created as the project directory.
+#' @param basedir The path to the base directory of a simulation project.  The default is a subdirectory of the current directory called "tmp".  If a string is supplied to the basedir argument, a subdirectory of the current directory will be created as the project directory.
 #' @details If the runflow function is called without an appropriate directory structure, this function is called to create one.  This function may also be called directly by the user, to create a directory structure with a deck dataveclate, rather than a runnable deck.
 #'
 #' The directory structure includes three subdirectories of the basedir:  a DECKS directory where decks and deck dataveclates are stored, an OUTPUT directory for simulation run output and a REPORTS directory for storing information concerning multiple runs.  When a model is run, the output will be placed in a subdirectory of the OUTPUT directory with the same name as the deck.
+#'
+#' This function will obviously fail if the user does not have permission to create directories.
 #' @return Returns FALSE if any of the creation or copying tasks failed.
 #' @export
-MakeProj <- function(deckname = NULL, basedir = "."){
+MakeProj <- function(deckname = NULL, basedir = "tmp"){
   ok1 <- ok2 <- ok3 <- ok4 <- ok5 <- TRUE
   if (!dir.exists(basedir)) {
     ok1 <- dir.create(basedir)

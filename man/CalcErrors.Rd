@@ -4,14 +4,14 @@
 \alias{CalcErrors}
 \title{Calculate the differences between the base case and the simulation runs}
 \usage{
-CalcErrors(long = NULL, base_case = NULL, basedir = ".")
+CalcErrors(long = NULL, base_case = NULL, basedir = "tmp")
 }
 \arguments{
 \item{long}{A long format data frame with historical data and the simulation results.}
 
 \item{base_case}{The case against which all others will be compared.}
 
-\item{basedir}{The path to the base directory of a simulation project.  The default is the current directory.}
+\item{basedir}{The path to the base directory of a simulation project.  The default is a subdirectory of the current directory called "tmp".}
 }
 \value{
 This returns a long format data frame with production data and the calculated errors.

@@ -4,7 +4,7 @@
 \alias{VarSens1}
 \title{blah}
 \usage{
-VarSens1(template = NULL, basedir = ".")
+VarSens1(template = NULL, basedir = "tmp")
 }
 \arguments{
 \item{template}{blah}

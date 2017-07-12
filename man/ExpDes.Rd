@@ -2,21 +2,25 @@
 % Please edit documentation in R/05_hmsetup.R
 \name{ExpDes}
 \alias{ExpDes}
-\alias{ExpDes.hmvars}
-\title{Create an experimental design using a template object.}
+\title{ExpDes:  Create an experimental design using an hmvars object.}
 \usage{
-ExpDes(obj = NULL, type = "fpb", basedir = ".",
-  objname = obj$template_name, ...)
-
-\method{ExpDes}{hmvars}(obj = NULL, type = "fpb", basedir = ".",
+ExpDes(obj = NULL, edtype = "augfpb", ncases = NULL, basedir = "tmp",
   objname = obj$template_name, ...)
 }
 \arguments{
 \item{obj}{The name of an hmvars object.}
 
-\item{type}{The type of experimental design.  Folded Plackett-Burman is the default (and all that is supported, so far.)}
+\item{edtype}{The type of experimental design.  This should be one of c("pb", "fpb", "augfpb", "lhs").
+\itemize{
+  \item \emph{pb} {Plackett-Burman. (FrF2::pb)}
+  \item \emph{fpb} {Folded Plackett-Burman. (FrF2::fold.design)}
+  \item \emph{augfpb} {Folded Plackett-Burman augmented with  a latin hypercube spacefilling design. This is the default. (lhs::optAugmentLHS)}
+  \item \emph{lhs} {A latin hypercube spacefilling design. (lhs::improvedLHS)}
+}}
 
-\item{basedir}{The path to the base directory of a simulation project.  The default is the current directory.  This is used to store the edited object.}
+\item{ncases}{The desired number of cases to be run.    This value only constrains the spacefilling portion of the design.}
+
+\item{basedir}{The path to the base directory of a simulation project.  The default is a subdirectory of the current directory called "tmp".  This is used to store the edited object.}
 
 \item{objname}{This is used to save the edited object to a file. It defaults to the name of the hmvars object.}
 
@@ -29,5 +33,5 @@ Returns a template object, and writes out a template object file.
 This function reads parameters in the hmvars object as a function of variable name, and uses them in constructing an experimental design.
 }
 \details{
-I'm thinking about it.
+The "ncases" value only constrains the spacefilling portion of the design.  The default of 10 times the number of variables is a common rule of thumb for spacefilling designs.  When "augfpb" is chosen, the number of cases for the "fpb" design is subtracted from the "ncases" value, and this remainder is the number of points that will be augmented with a spacefilling design.
 }

@@ -4,12 +4,12 @@
 \alias{ErrorByMember}
 \title{Summarize errors by member}
 \usage{
-ErrorByMember(long, basedir = ".", skip_cases = "HIST")
+ErrorByMember(long, basedir = "tmp", skip_cases = "HIST")
 }
 \arguments{
 \item{long}{The full path to a .csv, .xls, or .xlsx file containing production history data.}
 
-\item{basedir}{The path to the base directory of a simulation project.  The default is the current directory.  This is necessary for saving the results.}
+\item{basedir}{The path to the base directory of a simulation project.  The default is a subdirectory of the current directory called "tmp".  This is necessary for saving the results.}
 
 \item{skip_cases}{It may be inappropriate to include some cases in the eroor statistics.  The default is to skip all cases with HIST in the name.  This parameter may be a character vector and/or a case insensitive regular expression.}
 }
@@ -20,5 +20,5 @@ Returns a data frame with various summary statistics for each member, and wrties
 A production member is defined as the unique grouping of all cases, well/group names and keywords.  Summary statistics are calculated for each member.
 }
 \details{
-The statistics calculated for each error(ERR) and error fraction (FRAC_ERR) are minimum, maximum, mean, mean of absolute values, the approximate probability for the Shapiro-Wilk Normality test, and the slope of the errors with respect to date.
+The statistics calculated for each error(ERR) and error fraction (FRAC_ERR) are minimum, maximum, mean, mean of absolute values, the approximate probability for the Shapiro-Wilk Normality test, and the slope of the errors with respect to date.  The probability associated with the Shapiro-Wilk test is a null hypothesis probability, that is, the smaller it is, the more likely that the tested sample is from a normal distribution.
 }

@@ -4,12 +4,12 @@
 \alias{ImportHist}
 \title{Import production history}
 \usage{
-ImportHist(ssheetfile = NULL, basedir = ".", format = "\%d-\%b-\%Y")
+ImportHist(ssheetfile = NULL, basedir = "tmp", format = "\%d-\%b-\%Y")
 }
 \arguments{
 \item{ssheetfile}{The full path to a .csv, .xls, or .xlsx file containing production history data.}
 
-\item{basedir}{The path to the base directory of a simulation project.  The default is the current directory.}
+\item{basedir}{The path to the base directory of a simulation project.  The default is a subdirectory of the current directory called "tmp".  This is necessary for reading and writing the PROJSUm.csv file, where the history and simulation data is stored.}
 
 \item{format}{The date format in the csv file being imported.}
 }

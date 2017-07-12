@@ -2,16 +2,16 @@
 % Please edit documentation in R/02_running.R
 \name{RunFlow}
 \alias{RunFlow}
-\title{Run an Open Porous Media reservoir simulation}
+\title{RunFlow:  Run an Open Porous Media reservoir simulation}
 \usage{
-RunFlow(decknames, basedir = ".", sim_exec = "flow", restartcase = NULL,
+RunFlow(decknames, basedir = "tmp", sim_exec = "flow", restartcase = NULL,
   sim_version = "stable", queue = "background", overwrite = NULL,
   wait = FALSE)
 }
 \arguments{
 \item{decknames}{A character vector with the name and full path to one or more Eclipse style simulation input decks.}
 
-\item{basedir}{The base directory of a simulation project, assumed to be the current directory.  If a project directory structure does not exist, one will be created.}
+\item{basedir}{The path to the base directory of a simulation project.  The default is a subdirectory of the current directory called "tmp".  If a project directory structure does not exist, one will be created.}
 
 \item{sim_exec}{one of ("flow", "flow_mpi", "flow_polymer", "flow_sequential", "flow_solvent")}
 

@@ -2,12 +2,9 @@
 % Please edit documentation in R/05_hmsetup.R
 \name{BuildDecks}
 \alias{BuildDecks}
-\alias{BuildDecks.hmvars}
-\title{Create a set of decks using a deck template and an experimental design.}
+\title{BuildDecks:  Create a set of decks using a deck template and the experimental design in an hmvars object.}
 \usage{
-BuildDecks(obj, template, basedir = ".", overwrite = FALSE, cases = NULL)
-
-\method{BuildDecks}{hmvars}(obj, template, basedir = ".", overwrite = FALSE,
+BuildDecks(obj, template, basedir = "tmp", overwrite = FALSE,
   cases = NULL)
 }
 \arguments{
@@ -15,9 +12,9 @@ BuildDecks(obj, template, basedir = ".", overwrite = FALSE, cases = NULL)
 
 \item{template}{The deck template associated with the hmvars object.}
 
-\item{basedir}{The path to the base directory of a simulation project.  The default is the current directory.}
+\item{basedir}{The path to the base directory of a simulation project.  The default is a subdirectory of the current directory called "tmp".}
 
-\item{overwrite}{TRUE means overwrite all; FALSE means don't overwrite anything; NULL (the defaults) means overwrite decks older than the hmvars object.}
+\item{overwrite}{TRUE means overwrite all; FALSE (the default) means don't overwrite anything; NULL means overwrite decks older than the hmvars object.}
 
 \item{cases}{The default is NULL, meaning create a deck for all of the cases in the experimental design.  Alternatively, a list of line numbers in the experimental design for the desired cases may be submitted.}
 }
@@ -28,5 +25,5 @@ Returns a list of deck files suitable for use in submitting the cases
 This function reads an experimental design from a hmvars object and combines it with the appropriate deck template to create a series of decks implementing the experimental design.
 }
 \details{
-I'm thinking about it.
+FALSE is the default for overwrite because this would seem to be the most common use case.  One would expect to create a design, build decks, and run some cases.  After looking as the results and thinking a little, one would add some cases to the experimental design and run some more cases.  If the old decks that you have already run were overwritten, they would have a newer file date than the results from the previous runs, and they would be run again.
 }

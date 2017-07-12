@@ -1,14 +1,14 @@
 #' @title Read an Eclipse style summary file into R and save it as csv file
 #' @description This function converts Eclipse style xy type output to a csv file for later use.
 #' @param casename The deck basename of an Eclipse style simulation summary output.  A perl style regular expression may be used to find multiple summary files.  Default behavior is to search recursively in the basedir to find a list of summary files.
-#' @param basedir The path to the base directory of a simulation project.  The default is the current directory.
+#' @param basedir The path to the base directory of a simulation project.  The default is a subdirectory of the current directory called "tmp".
 #' @details The ability to parse the summary files resides in libecl, created by Statoil for use in their Ensemble Reservoir Tool.  This function currently uses the Python wrappers available for libecl, because I haven't yet learned how to use the library directly.
 #' @return The function writes out a csv file for each input summary file, into  the appropriate simulation run output directory.  It also appends the new summary data to a csv file with the combined results of all previous runs (in the REPORTS sub directory), and returns a dataframe with the combined summary data.  When the casename duplicates a casename from a previous combined results, the new case is substituted for the old case.
 #' @references \href{http://ert.nr.no/ert/index.php/Main_Page}{Ensemble Reservoir Tool}, \href{https://github.com/Statoil/libecl}{libecl}
 #' @export
 #------------------------------------------------------------------------------
-EclSum <- function(casename = "^.+", basedir = "."){
-  basedir <- normalizePath(basedir)
+EclSum <- function(casename = "^.+", basedir = "tmp"){
+  basedir <- .CheckBasedir(basedir)
   sumfiles <- .FindSummary(basedir = basedir, casename = casename)
   long <- .LongDefinition()
   projsum <- file.path(basedir,"REPORTS","PROJSUM.csv")
@@ -118,20 +118,20 @@ EclSum <- function(casename = "^.+", basedir = "."){
                        ext = "\\.DATA$",
                        recursive = TRUE,
                        ...){
-  if (is.null(basedir)) {
+  if (is.null(basedir) | !dir.exists(basedir)) {
     basedir <- getwd()
-  }else{
+  } else {
     basedir <- normalizePath(basedir)
   }
   decks <- character()
   for (pat in ext) {
     pattern <- paste0(casename, pat)
     deckpath <- list.files(path = basedir,
-                          pattern = pattern,
-                          full.names = TRUE,
-                          recursive = recursive,
-                          ignore.case = TRUE,
-                          include.dirs = TRUE)
+                           pattern = pattern,
+                           full.names = TRUE,
+                           recursive = recursive,
+                           ignore.case = TRUE,
+                           include.dirs = TRUE)
     decks <- c(decks, deckpath)
   }
   return(decks)
@@ -143,12 +143,13 @@ EclSum <- function(casename = "^.+", basedir = "."){
 # formatted unified: .FUNSMRY
 # formatted not unified: .Axxxx
 # look for only unified files, for now
-.FindSummary <- function(basedir = ".",
+.FindSummary <- function(basedir = "tmp",
                          casename = "^.+",
                          recursive = TRUE,
                          ...){
    ext <- c("\\.F*UNSMRY")
   #  ext <- c(".unsmry", ".UNSMRY", ".funsmry", ".FUNSMRY")
+  basedir <- .CheckBasedir(basedir)
   sumfiles <- .FindDecks(basedir = basedir,
                          casename = casename,
                          ext = ext,
@@ -210,7 +211,7 @@ EclSum <- function(casename = "^.+", basedir = "."){
 #------------------------------------------------------------------------------
 # functionality to check deck for units type needs to be tested
 # still nned to see what the Metric units are
-.KW2Units <- function(keyword, type="FIELD", deck=NULL){
+.KW2Units <- function(keyword, type = "FIELD", deck = NULL){
   if (!is.null(deck)) {type <- .FindUnitType(deck)}
   unitsF <- switch(keyword,
                    "WOPR" = "STBD",      # Oil Prod Rate
