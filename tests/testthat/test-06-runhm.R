@@ -69,6 +69,7 @@ element_error <- ErrorByElement(long = long, basedir = basedir)
 # head(element_error)
 # summary(element_error)
 member_error <- ErrorByMember(long = long, basedir = basedir)
+spe9_mem_err <- member_error
 # mefn <- file.path(basedir, "REPORTS", "MemberErrorLong.csv")
 # member_error <- readr::read_csv(mefn, col_types = runOPM:::.ErrorByElemLongColSpec())
 # head(member_error)
@@ -83,12 +84,7 @@ test_that("Error calculation and summarizing works", {
   expect_equal_to_reference(member_error, "test_member_errors.rds")
 })
 #==============================================================================
-#------------------------------------------------------------------------------
-test_that("VarSens1 works", {
-  expect_equal(1, 1)
-})
-#==============================================================================
-spe9_mod_sel <- SelectModels(member_error = member_error,
+spe9_mod_sel <- SelectModels(member_error = spe9_mem_err,
                              basedir = "spe9hm",
                              wgnames = c("FIELD"),
                              keywords = c("WOPR", "WGPR", "WWPR"),
@@ -100,9 +96,33 @@ spe9_mod_sel <- SelectModels(member_error = member_error,
 # spe9_mod_sel$ERRORTYPE
 # spe9_mod_sel$filt
 # spe9_mod_sel$choice
-# spe9_mod_sel$kmdata
+# spe9_mod_sel$kmfilt
+
+spe.km <- BuildKModels(hmvars = spe9vars, member_error = member_error,
+                       model_selection = spe9_mod_sel, basedir = "spe9hm")
 #------------------------------------------------------------------------------
-test_that("BuildKmodels works", {
+test_that("BuildKModels works", {
+  expect_equal(1, 1)
+})
+
+#==============================================================================
+spe9_varsens <- ModelSensitivity(hmvars = spe9vars, member_error = spe9_mem_err,
+                                 model_selection = spe9_mod_sel)
+#------------------------------------------------------------------------------
+test_that("ModelSensitivity works", {
+  expect_equal(1, 1)
+})
+#==============================================================================
+spe9_opt <- RunGPareto(kmodels = spe.km, method = "genoud", basedir = "spe9hm")
+#------------------------------------------------------------------------------
+test_that("RunGPareto works", {
+  expect_equal(1, 1)
+})
+
+#==============================================================================
+
+#------------------------------------------------------------------------------
+test_that("More stuff works", {
   expect_equal(1, 1)
 })
 

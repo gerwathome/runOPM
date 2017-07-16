@@ -53,6 +53,7 @@ ReadTemplate <- function(template = NULL, basedir = "tmp"){
                 template_name = objname
   ) # end of class definition
   class(hmvars) <- "hmvars"
+  rownames(hmvars$vars) <- NULL
   hmvars$vars$name <- varnames
   hmvars$vars$distribution <- rep("unif",nvars)
   rdsfn <- file.path(decksdir, paste0(objname, ".rds"))
@@ -253,6 +254,7 @@ ExpDes <- function(obj=NULL, edtype = "augfpb", ncases = NULL, basedir = "tmp",
     lhs <- .Uncoded2Coded(lhs01, 0, 1)
     obj$expDesignCoded <- lhs
   }
+  rownames(obj$expDesignCoded) <- NULL
   # copy from coded to uncoded for dimensions and column names
   obj$expDesignUncoded <- obj$expDesignCoded
   # calculate the uncoded values
@@ -269,6 +271,7 @@ ExpDes <- function(obj=NULL, edtype = "augfpb", ncases = NULL, basedir = "tmp",
     #   obj$expDesignUncoded[i,var] <- .Coded2Uncoded(c, lu, hu)
     # } # end for i
   } # end for var
+  rownames(obj$expDesignUncoded) <- NULL
   basedir <- .CheckBasedir(basedir)
   decksdir <- file.path(basedir,"DECKS")
   rdsfn <- file.path(decksdir, paste0(objname, ".rds"))
@@ -366,6 +369,8 @@ AugExpDes <- function(obj=NULL, edtype = "aug", ncases = 10, basedir = "tmp",
       #   obj$expDesignUncoded[i,var] <- .Coded2Uncoded(c, lu, hu)
       # } # end for i
     } # end for var
+    rownames(obj$expDesignCoded) <- NULL
+    rownames(obj$expDesignUncoded) <- NULL
     saveRDS(obj, file = rdsfn)
     return(obj)
   } else if (edtype == "manual") {
@@ -406,6 +411,8 @@ AugExpDes <- function(obj=NULL, edtype = "aug", ncases = 10, basedir = "tmp",
       } # end for var
     }
   }
+  rownames(obj$expDesignCoded) <- NULL
+  rownames(obj$expDesignUncoded) <- NULL
   saveRDS(obj, file = rdsfn)
   return(obj)
 }

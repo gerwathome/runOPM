@@ -239,10 +239,55 @@ ErrorByMember <- function(long, basedir = "tmp", skip_cases = "HIST"){
 #' @return blah
 #' @export
 #------------------------------------------------------------------------------
-VarSens1 <- function(template = NULL, basedir = "tmp"){
-  varsens1 <- 1
-  return(varsens1)
+ModelSensitivity <- function(hmvars = NULL, member_error = NULL,
+                             model_selection = NULL, basedir = "tmp"){
+  basedir <- .CheckBasedir(basedir)
+  decksdir <- file.path(basedir,"DECKS")
+  reportsdir <- file.path(basedir,"REPORTS")
+  if (is.null(hmvars)) {stop("An hmvars object must be specified.")}
+  if (is.null(member_error)) {stop("A member_error object must be specified.")}
+  if (is.null(model_selection)) {stop(paste0("A model_selection object must",
+                                             " be specified."))}
+  design <- as.data.frame(hmvars$expDesignCoded)
+  objname <- hmvars$template_name
+  response <- .Long2WideError(member_error, model_selection)
+  varsens <- multisensi::multisensi(design = design, model = response)
+  vs_path <- file.path(report_path, paste0(objname, "_varsens.rds"))
+  saveRDS(object = varsens, file = vs_path)
+  return(varsens)
 } # end function
+# [*] Dimension Reduction
+# [*] Analysis + Sensitivity Indices
+# Error: cannot allocate vector of size 54.6 Gb
+#==============================================================================
+#' @title blah
+#' @description blah
+#' @param template blah
+#' @param basedir blah
+#' @details blah
+#' @return blah
+#' @export
+#------------------------------------------------------------------------------
+SobelSensitivity <- function(hmvars = NULL, member_error = NULL,
+                             model_selection = NULL, basedir = "tmp"){
+  basedir <- .CheckBasedir(basedir)
+  decksdir <- file.path(basedir,"DECKS")
+  reportsdir <- file.path(basedir,"REPORTS")
+  if (is.null(hmvars)) {stop("An hmvars object must be specified.")}
+  if (is.null(member_error)) {stop("A member_error object must be specified.")}
+  if (is.null(model_selection)) {stop(paste0("A model_selection object must",
+                                             " be specified."))}
+  design <- as.data.frame(hmvars$expDesignCoded)
+  objname <- hmvars$template_name
+  response <- .Long2WideError(member_error, model_selection)
+  varsens <- multisensi::multisensi(design = design, model = response)
+  vs_path <- file.path(report_path, paste0(objname, "_varsens.rds"))
+  saveRDS(object = varsens, file = vs_path)
+  return(varsens)
+} # end function
+# [*] Dimension Reduction
+# [*] Analysis + Sensitivity Indices
+# Error: cannot allocate vector of size 54.6 Gb
 #==============================================================================
 #' @title SelectModels:  Help filter the member error data frame to select data for the desired kriged models
 #' @description blah
@@ -281,7 +326,7 @@ SelectModels <- function(member_error = NULL, basedir = "tmp", wgnames = NULL,
   filt <- filtwg & filtkw & filterr
   model_selection <- vector("list",7)
   names(model_selection) <- c("all_choices", "WGNAME", "KEYWORD", "ERRORTYPE",
-                              "filt", "choice", "kmdata")
+                              "filt", "choice", "kmfilt")
   wke <- c("WGNAME", "KEYWORD", "ERRORTYPE")
   model_selection[["all_choices"]] <- unique(member_error[,wke])
   model_selection[["WGNAME"]] <- unique(member_error[,"WGNAME"])
@@ -289,77 +334,44 @@ SelectModels <- function(member_error = NULL, basedir = "tmp", wgnames = NULL,
   model_selection[["ERRORTYPE"]] <- unique(member_error[,"ERRORTYPE"])
   model_selection[["filt"]] <- filt
   model_selection[["choice"]] <- unique(member_error[filt, wke])
-  model_selection[["kmdata"]] <- data.frame(member_error[filt,])
+  rownames(model_selection$choice) <- paste(model_selection$choice$WGNAME,
+                                           model_selection$choice$KEYWORD,
+                                           model_selection$choice$ERRORTYPE,
+                                           sep = ".")
+  kmfilt <- apply(model_selection$choice, 1, .WKE2Filt,
+                  member_error = member_error)
+  model_selection[["kmfilt"]] <- data.frame(kmfilt)
   ms_path <- file.path(report_path, "MemberSelection.rds")
   saveRDS(object = model_selection, file = ms_path)
   return(model_selection)
 } # end function
-# setwd("/home/gerw/gitrepos/runOPM/tests/testthat/")
-# member_error <- member_error
-# basedir <- "spe9hm"
-# wgnames <- c("FIELD")
-# keywords <- c("WOPR", "WGPR", "WWPR")
-# errortypes <- c("MEAN_FRAC_ERR", "ABS_MEAN_FRAC_ERR")
-# spe9_mod_sel <- SelectModels(member_error = member_error,
-#                              basedir = "spe9hm",
-#                              wgnames = c("FIELD"),
-#                              keywords = c("WOPR", "WGPR", "WWPR"),
-#                              errortypes = c("MEAN_FRAC_ERR",
-#                               "ABS_MEAN_FRAC_ERR"))
-# spe9_mod_sel[["choice"]]
-# spe9_mod_sel[["kmdata"]]
 #==============================================================================
-#' @title blah
-#' @description blah
-#' @param data blah
-#' @param template blah
-#' @param hmvars blah
+#' @title BuildKModels:  Build kriged proxy models
+#' @description This function creates a kriged model from the experimental design, the simulation results, and the chosen response variables.
+#' @param hmvars The hmvars object has the experimental design that was used to create the simulation decks.
+#' @param member_error This contains errors calculated from the results of the simulation runs for each design point (i.e. each row) of the experimental design, and is the output of the ErrorByMember function.
+#' @param model_selection This is output by the SelectModels function, and contains the filters to be used on the member error data to select the appropriate data for each kriged model.
 #' @param basedir The path to the base directory of a simulation project.  The default is a subdirectory of the current directory called "tmp".  This is necessary for saving the results.
 #' @details blah
 #' @return blah
 #' @export
 #------------------------------------------------------------------------------
-BuildKmodels <- function(kmdata = NULL, template = NULL, basedir = "tmp"){
+BuildKModels <- function(hmvars = NULL, member_error = NULL,
+                         model_selection = NULL, basedir = "tmp"){
   basedir <- .CheckBasedir(basedir)
   decksdir <- file.path(basedir,"DECKS")
   reportsdir <- file.path(basedir,"REPORTS")
   tdp <- character()
-  if (!is.null(template)) {
-    if (file.exists(template)) {
-      tdp <- template
-    } else if (file.exists(file.path(decksdir,template))) {
-      tdp <- file.path(decksdir,template)
-    }else{
-      stop(paste("Failed to find template deck", template))
-    } # checking for file existance
-  } else {
-    stop("A template deck must be specified.")
-  } # if not null
+  if (is.null(hmvars)) {stop("An hmvars object must be specified.")}
+  if (is.null(member_error)) {stop("A member_error object must be specified.")}
+  if (is.null(model_selection)) {stop("A model_selection object must be specified.")}
   design <- hmvars$expDesignCoded
-  if (is.null(kmdata)) {
-    ms_path <- file.path(reportsdir, "MemberSelection.rds")
-    if (file.exists(ms_path)) {
-      model_selection <- readRDS(file = ms_path)
-      kmdata <- model_selection$kmdata
-    } else {
-      stop("Data must be supplied")
-    } # if file exists
-  } # if is null data
-  objname <- basename(tdp)
-  objname <- sub("\\.\\w+$", "", objname, perl = TRUE)
-  wke <- c("WGNAME", "KEYWORD", "ERRORTYPE")
-  models <- unique(kmdata[, wke])
-  models <- mutate(models, NAME = paste(models$WGNAME,
-                                        models$KEYWORD,
-                                        models$ERRORTYPE,
-                                        sep = "-"),
-                   filt = kmdata$WGNAME == models$WGNAME &
-                     kmdata$KEYWORD == models$KEYWORD &
-                     kmdata$ERRORTYPE == models$ERRORTYPE,
-                   km = DiceKriging::km(design = design,
-                                        response = res[[1]]))
-  nmodels <- nrow(model_criteria)
-  kmodels <- 1
+  objname <- hmvars$template_name
+  kmfilt <- model_selection$kmfilt
+  kmodels <- apply(kmfilt, 2, .Filt2KM, design = design,
+                          member_error = member_error)
+  km_path <- file.path(report_path, paste0(objname, "_km.rds"))
+  saveRDS(object = kmodels, file = km_path)
   return(kmodels)
 } # end function
 #==============================================================================
@@ -546,7 +558,6 @@ RunGPareto <- function(kmodels = NULL, method = "genoud", basedir = "tmp", ...){
   return(results)
 }
 #==============================================================================
-# .List2Filt(filt_list, filt_col)}
 .List2Filt <- function(filt_list, filt_col){
   filt <- rep(FALSE, length(filt_col))
   nfilt <- length(filt_list)
@@ -554,11 +565,69 @@ RunGPareto <- function(kmodels = NULL, method = "genoud", basedir = "tmp", ...){
     tmp <- filt_col == filt_list[i]
     filt <- filt | tmp
   }
-return(filt)
+  return(filt)
 }
 # filt_list <- c("FIELD", "PRODU2")
 # filt_col <- member_error[,"WGNAME"]
-# test <- .List2Filt(filt_list, filt_col)
+# test <- runOPM:::.List2Filt(filt_list, filt_col)
 # sum(test)
 # [1] 50400
+#==============================================================================
+.WKE2Filt <- function(member_error = NULL, wke = c(NULL, NULL, NULL)){
+  WGNAME = wke[1]
+  KEYWORD = wke[2]
+  ERRORTYPE = wke[3]
+  filtwg <- filtkw <- filterr <- rep(TRUE, 1)
+  if (!is.null(WGNAME)) {
+    filtwg <- .List2Filt(WGNAME, member_error$WGNAME)
+  }
+  if (!is.null(KEYWORD)) {
+    filtkw <- .List2Filt(KEYWORD, member_error$KEYWORD)
+  }
+  if (!is.null(ERRORTYPE)) {
+    filterr <- .List2Filt(ERRORTYPE, member_error$ERRORTYPE)
+  }
+  filt <- filtwg & filtkw & filterr
+  return(filt)
+}
+# WGNAME <- "FIELD"
+# KEYWORD <- "WOPR"
+# ERRORTYPE <- "ABS_MEAN_FRAC_ERR"
+# wke <- c(WGNAME, KEYWORD, ERRORTYPE)
+# filt_wke <- runOPM:::.WKE2Filt(member_error, wke)
+# sum(filt_wke)
+# [1] 300
+#==============================================================================
+.Filt2KM <- function(kmfilt, member_error, design){
+  design <- as.data.frame(design)
+  # print(summary(design))
+  # nr <- nrow(design)
+  # nc <- ncol(design)
+  # cl <- class(design)
+  # isdf <- is.data.frame(design)
+  # print(paste0("is.data.frame:  ",isdf, ", ", cl,":  ", nr, " by ", nc))
+  response <- member_error$VALUE[kmfilt]
+  # print(summary(response))
+  # nr <- NROW(response)
+  # nc <- NCOL(response)
+  # cl <- class(response)
+  # isvec <- is.vector(response)
+  # print(paste0("is.vector:  ",isvec, ", ", cl,":  ", nr, " by ", nc))
+  kmodel <- DiceKriging::km(design = design, response =  response)
+  # print("after")
+  return(kmodel)
+}
+#==============================================================================
+.Long2WideError <- function(member_error, model_selection){
+  filt_df <- model_selection$kmfilt
+  me_val <- member_error$VALUE
+  f <- function(me_val, filt_df){me_val[filt_df]}
+  wide_response <- as.data.frame(apply(filt_df, 2, f, me_val = me_val))
+  return(wide_response)
+}
+# member_error <- member_error
+# model_selection <- spe9_mod_sel
+# wide_response <- runOPM:::.Long2WideError(member_error, spe9_mod_sel)
+# summary(wide_response)
+# head(wide_response)
 #==============================================================================
