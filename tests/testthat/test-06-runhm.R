@@ -37,12 +37,24 @@ file.copy(from.perm.inc.path, file.path(griddir, "PERMVALUES.INC"),
 file.copy(from.grdecl.path, file.path(griddir, "SPE9.GRDECL"),
           overwrite = TRUE)
 spe9vars <- ReadTemplate(template, "spe9hm")
-spe9vars <- EditVar(spe9vars, pattern = "PORO", truncLow = 0.1,
-                     truncHigh = 2, param1 = 0.1, param2 = 2.0,
-                     basedir = basedir)
-spe9vars <- EditVar(spe9vars, pattern = "PERM", truncLow = 0.1,
-                     truncHigh = 1.5, param1 = 0.1, param2 = 2.0,
-                     basedir = basedir)
+# 30 variables
+# spe9vars <- EditVar(spe9vars, pattern = "PORO", truncLow = 0.1,
+#                      truncHigh = 2, param1 = 0.1, param2 = 2.0,
+#                      basedir = basedir)
+# spe9vars <- EditVar(spe9vars, pattern = "PERM", truncLow = 0.1,
+#                      truncHigh = 1.5, param1 = 0.1, param2 = 2.0,
+#                      basedir = basedir)
+# 3 variables
+spe9vars <- EditVar(spe9vars, pattern = "PORO", truncLow = 1,
+                    truncHigh = 1, param1 = 1, param2 = 1,
+                    basedir = basedir)
+spe9vars <- EditVar(spe9vars, pattern = "PERM", truncLow = 1,
+                    truncHigh = 1, param1 = 1, param2 = 1,
+                    basedir = basedir)
+spe9vars <- EditVar(spe9vars, pattern = "PERM[123]", truncLow = 0.1,
+                    truncHigh = 1.5, param1 = 0.1, param2 = 2.0,
+                    basedir = basedir)
+
  set.seed(424242)
  spe9vars <- ExpDes(spe9vars, edtype = "augfpb", basedir = basedir)
  spe9decks <- BuildDecks(spe9vars, template = templatepath,  basedir = basedir,
@@ -63,7 +75,7 @@ long <- CalcErrors(long = spe9rslts, base_case = "HIST_CSV",
 
 # psfn <- file.path(basedir, "REPORTS", "PROJSUM.csv")
 # long <- readr::read_csv(psfn, col_types = runOPM:::.LongColSpec())
-element_error <- ErrorByElement(long = long, basedir = basedir)
+# element_error <- ErrorByElement(long = long, basedir = basedir)
 # eefn <- file.path(basedir, "REPORTS", "ElementError.csv")
 # eesum <- readr::read_csv(eefn, col_types = runOPM:::.ErrorByElementColSpec())
 # head(element_error)
@@ -80,7 +92,7 @@ test_that("Error calculation and summarizing works", {
   expect_equal_to_reference(spe9vars$expDesignCoded,
                             "spe9vars_expdes_coded.rds")
   expect_equal_to_reference(long, "test_calc_errors.rds")
-  expect_equal_to_reference(element_error, "test_element_errors.rds")
+  # expect_equal_to_reference(element_error, "test_element_errors.rds")
   expect_equal_to_reference(member_error, "test_member_errors.rds")
 })
 #==============================================================================
@@ -98,7 +110,7 @@ spe9_mod_sel <- SelectModels(member_error = spe9_mem_err,
 # spe9_mod_sel$choice
 # spe9_mod_sel$kmfilt
 
-spe.km <- BuildKModels(hmvars = spe9vars, member_error = member_error,
+spe.km <- BuildKModels(hmvars = spe9vars, member_error = spe9_mem_err,
                        model_selection = spe9_mod_sel, basedir = "spe9hm")
 #------------------------------------------------------------------------------
 test_that("BuildKModels works", {
@@ -129,3 +141,43 @@ test_that("More stuff works", {
 #==============================================================================
 # clean up
 # unlink("spe9hm", recursive = TRUE)
+
+#==============================================================================
+# misc experimentation
+rm(list = ls())
+setwd("/home/gerw/gitrepos/runOPM/tests/testthat")
+hvfn <- "/home/gerw/gitrepos/runOPM/tests/testthat/spe9hm/DECKS/SPE9_hmvars.rds"
+spe9vars <- readRDS(hvfn)
+
+mefn <- "/home/gerw/gitrepos/runOPM/tests/testthat/spe9hm/REPORTS/MemberErrorLong.csv"
+spe9_mem_err <- readr::read_csv(mefn)
+member_error <- spe9_mem_err
+
+msfn <- "/home/gerw/gitrepos/runOPM/tests/testthat/spe9hm/REPORTS/MemberSelection.rds"
+spe9_mod_sel <- readRDS(msfn)
+model_selection <- spe9_mod_sel
+optfn <- "/home/gerw/gitrepos/runOPM/tests/testthat/spe9hm/REPORTS/spe_km_opt.rds"
+spe9_opt <- readRDS(optfn)
+
+projsumfn <- "/home/gerw/gitrepos/runOPM/tests/testthat/BIGFILES/PROJSUM.csv"
+spe9rslts <- readr::read_csv(projsumfn, col_types = runOPM:::.LongColSpec())
+
+wide_response <- runOPM:::.Long2WideError(spe9_mem_err, spe9_mod_sel)
+ma <- function(x){mean(abs(x))}
+MeanAbsOpt <- apply(spe9_opt$values,1,ma)
+MeanAbs <- apply(wide_response,1,ma)
+wr <- as.data.frame(cbind(wide_response, MeanAbs))
+MAorder <- order(wr$MeanAbs)
+best10 <- rownames(wide_response)[MAorder][1:10]
+
+runOPM::PlotEach(longdata = spe9rslts, casenames = best10,
+                 wgnames = "FIELD", keywords = c("WOPR", "WGPR", "WWPR"),
+                 basecase = "HIST_CSV")
+
+longdata = spe9rslts
+casenames = best10
+wgnames = "FIELD"
+keywords = c("WOPR", "WGPR", "WWPR")
+vars.long.df <- runOPM:::.BuildPlotFIlter(longdata,
+                                 casenames = casenames, wgnames = wgnames,
+                                 keywords = keywords)

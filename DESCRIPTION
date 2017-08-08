@@ -25,7 +25,9 @@ Imports: ggplot2,
     minimaxdesign,
     fOptions,
     Rcpp,
-    readxl
+    readxl,
+    colorspace,
+    pals
 Suggests: knitr,
     rmarkdown,
     testthat,

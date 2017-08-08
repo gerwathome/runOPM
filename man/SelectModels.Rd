@@ -8,21 +8,28 @@ SelectModels(member_error = NULL, basedir = "tmp", wgnames = NULL,
   keywords = NULL, errortypes = NULL)
 }
 \arguments{
-\item{member_error}{blah}
+\item{basedir}{The path to the base directory of a simulation project.  The default is a subdirectory of the current directory called "tmp".  This is necessary for saving the results.}
 
-\item{basedir}{blah}
+\item{wgnames}{A list of Well/Group names to be selected from the member error dataframe.}
 
-\item{wgnames}{blah}
+\item{keywords}{A list of keywords to be selected from the member error dataframe.}
 
-\item{keywords}{blah}
-
-\item{errortypes}{blah}
+\item{errortypes}{A list of error types to be selected from the member error dataframe.}
 }
 \value{
-blah
+The model selection object:
+\describe{
+  \item{"model_selection$all_choices"}{"A data frame giving all combinations of WGNAME, KEYWORD, and ERRORTYPE available in the member error dataframe"}
+  \item{"model_selection$WGNAME"}{"A vector with all of the Well/Group names available in the member error dataframe"}
+  \item{"model_selection$KEYWORD"}{"A vector with all of the keywords available in the member error dataframe"}
+  \item{"model_selection$ERRORTYPE"}{"A vector with all of the error types available in the member error dataframe"}
+  \item{"model_selection$filt"}{"A filter that will retrieve all of the necessary data from the member error dataframe"}
+  \item{"model_selection$choice"}{"A dataframe showing the "}
+  \item{"model_selection$kmfilt"}{}
+}
 }
 \description{
-blah
+This function creates a dataframe of desired unique groupings of WGNAMES, KEYWORDS, and ERRORTYPES available in the member error dataframe, and filters to retrieve this data.
 }
 \details{
 blah

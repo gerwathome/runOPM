@@ -6,3 +6,5 @@ inst/doc
 vignettes/tmp
 src/*.o
 src/*.so
+tests/testhat/BIGFILES
+tests/testhat/spe9hm

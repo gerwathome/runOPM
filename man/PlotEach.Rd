@@ -5,7 +5,7 @@
 \title{Create an individual plot for each name(WELL/FIELD/GROUP) and keyword, with multiple cases on each plot.}
 \usage{
 PlotEach(longdata, casenames = NULL, wgnames = NULL, keywords = NULL,
-  ncolumns = 3)
+  basecase = NULL, ncolumns = 3)
 }
 \arguments{
 \item{longdata}{A long format summary dataframe, not the csv file stored with each simulation case output.  This may be either the output of the eclsum function, or the file "REPORTS/PROJSUM.csv".}

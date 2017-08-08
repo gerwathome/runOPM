@@ -52,130 +52,29 @@ ImportHist <- function(ssheetfile = NULL, basedir = "tmp", format = "%d-%b-%Y"){
 #==============================================================================
 #' @title Calculate the differences between the base case and the simulation runs
 #' @description This calculates the difference between a base case and a simulation case, as well as the fractional difference.
-#' @param long A long format data frame with historical data and the simulation results.
-#' @param base_case The case against which all others will be compared.
-#' @param basedir The path to the base directory of a simulation project.  The default is a subdirectory of the current directory called "tmp".
-#' @details There are numerous ways to judge how well the model fits the data.  We are going to assume that a good solution has four characteristics:  first, the mean normalized absolute error is minimized; second, the mean normalized error is minimized (i.e. close to zero); third, the errors are normally distributed; and fourth, the errors have no trend with time (i.e the slope of a fit through the residuals as a function of time is near zero).  The intent of these criteria is to ensure that the quality of the fit to the historical data is comparable to the expected error in a forecast.
-#'
-#' First it is necessary to define the timesteps at which errors are going to be estimated.   The default dates will be those of the base case, and all other case values will need to be available at those dates (or interpolated to those dates, eventually).
-#'
-#' The difference between a case and the base will be called ERR. The ERR divided by the base value will be called FRAC_ERR.
-#' @return This returns a long format data frame with production data and the calculated errors.
-#' @export
-#------------------------------------------------------------------------------
-CalcErrors <- function(long = NULL, base_case = NULL, basedir = "tmp"){
-  # check inputs
-  basedir <- .CheckBasedir(basedir)
-  decksdir <-  file.path(basedir, "DECKS")
-  reportsdir <-  file.path(basedir, "REPORTS")
-  projsum <- file.path(reportsdir, "PROJSUM.csv")
-  if (is.null(long)) {
-    if (file.exists(projsum)) {
-      long <- readr::read_csv(projsum, col_types = .LongColSpec())
-    } else {stop("Failed to find historical and simulation data")}
-  }
-  cases <- unique(long$CASENAME)
-  if (!any(grepl(base_case, cases, fixed = TRUE))) {
-    stop(paste0("Failed to locate the base case ", base_case))
-  }
-# calc errors as a vector
-  long_base <- long[long$CASENAME == base_case,
-                   c("DATE", "WGNAME", "KEYWORD", "VALUE")]
-  colnames(long_base) <- sub("VALUE", "BASE_VALUE", colnames(long_base),
-                             fixed = TRUE)
-  long_tmp <- dplyr::left_join(long, long_base,
-                                     by = c("DATE", "WGNAME", "KEYWORD"))
-  long_tmp$ERR <- rep(NA, nrow(long_tmp))
-  long_tmp$FRAC_ERR <- rep(NA, nrow(long_tmp))
-  # we don't wish to calculate error if either value is effectively 0
-  tolerance = .Machine$double.eps^0.5
-  filt_value <- abs(long_tmp$VALUE - 0) < tolerance
-  filt_base_value <- abs(long_tmp$BASE_VALUE - 0) < tolerance
-  filt <- !filt_value & !filt_base_value
-  long_tmp$ERR[filt] <- long_tmp$VALUE[filt] - long_tmp$BASE_VALUE[filt]
-  long_tmp$FRAC_ERR[filt] <- long_tmp$ERR[filt] / long_tmp$BASE_VALUE[filt]
-  col_filt <- !grepl("BASE_VALUE", colnames(long_tmp), fixed = TRUE)
-  long <- long_tmp[, col_filt]
-# write out results
-  readr::write_csv(long, projsum)
-  return(long)
-} # end function
-#==============================================================================
-#' @title Summarize errors by production element
-#' @description A production element is defined as the unique grouping of all well/group names and keywords.  Summary statistics are caculated for each element.
 #' @param long The full path to a .csv, .xls, or .xlsx file containing production history data.
 #' @param basedir The path to the base directory of a simulation project.  The default is a subdirectory of the current directory called "tmp".  This is necessary for saving the results.
-#' @param skip_cases It may be inappropriate to include some cases in the eroor statistics.  The default is to skip all cases with HIST in the name.  This parameter may be a character vector and/or a case insensitive regular expression.
-#' @details The statistics calculated for each error(ERR) and error fraction (FRAC_ERR) are minimum, maximum, mean, mean of absolute values, the approximate probability for the Shapiro-Wilk Normality test, and the slope of the errors with respect to date. The probability associated with the Shapiro-Wilk test is a null hypothesis probability, that is, the smaller it is, the more likely that the tested sample is from a normal distribution.
-#' @return Returns a data frame with various summary statistics for each element, and wrties out a csv file in the REPORTS directory.
-#' @export
-#------------------------------------------------------------------------------
-ErrorByElement <- function(long, basedir = "tmp", skip_cases = "HIST"){
-  skip_filt <- rep(FALSE, nrow(long))
-  if (!is.null(skip_cases)) {
-    skip_filt <- rep(TRUE, nrow(long))
-    for (i in 1:length(skip_cases)) {
-      skip_filt <- grepl(skip_cases[i], long$CASENAME,
-                         perl = TRUE, ignore.case = TRUE) & skip_filt
-    }
-  }
-  skip_filt <- !skip_filt
-  elements <- unique(long[skip_filt,c("WGNAME", "KEYWORD")])
-  element_error <- .ErrorByElementDefinition(nrow(elements))
-  element_error[,"WGNAME"] <- elements$WGNAME
-  element_error[,"KEYWORD"] <- elements$KEYWORD
-  for (i in 1:nrow(elements)) {
-    filtwgn <- grepl(element_error[i,"WGNAME"], long$WGNAME, fixed = TRUE)
-    filtkw <- grepl(element_error[i,"KEYWORD"], long$KEYWORD, fixed = TRUE)
-    filtna <- !is.na(long$ERR)
-    filt <- filtwgn & filtkw & filtna & skip_filt
-    dist_date <- long[filt,]$DATE
-    if (length(dist_date) == 0) {next}
-    dist_err <- long[filt,]$ERR
-    dist_frac_err <- long[filt,]$FRAC_ERR
-    element_error$MIN_ERR[i] <- min(dist_err)
-    element_error$MAX_ERR[i] <- max(dist_err)
-    element_error$MEAN_ERR[i] <- mean(dist_err)
-    element_error$ABS_MEAN_ERR[i] <- mean(abs(dist_err))
-    element_error$NORM_PROB_ERR[i] <- ifelse(mean(abs(dist_err)) > 0 &
-                                               length(dist_date) > 3 &
-                                               length(dist_date) < 5000,
-                                        stats::shapiro.test(dist_err)$p.value,
-                                             1.0)
-    element_error$SLOPE_ERR[i] <- stats::lm(dist_err ~
-                                              dist_date)$coefficients[2]
-    #
-    element_error$MIN_FRAC_ERR[i] <- min(dist_frac_err)
-    element_error$MAX_FRAC_ERR[i] <- max(dist_frac_err)
-    element_error$MEAN_FRAC_ERR[i] <- mean(dist_frac_err)
-    element_error$ABS_MEAN_FRAC_ERR[i] <- mean(abs(dist_frac_err))
-    element_error$NORM_PROB_FRAC_ERR[i] <- ifelse(mean(abs(dist_frac_err)) > 0 &
-                                                    length(dist_date) > 3 &
-                                                    length(dist_date) < 5000,
-                                    stats::shapiro.test(dist_frac_err)$p.value,
-                                                  1.0)
-    element_error$SLOPE_FRAC_ERR[i] <- stats::lm(dist_frac_err
-                                          ~ dist_date)$coefficients[2]
-  }
-  basedir <- .CheckBasedir(basedir)
-  fn <- file.path(basedir, "REPORTS", "ElementErrorLong.csv")
-  elem_err_long <- tidyr::gather(element_error, ERRORTYPE, VALUE, -1:-2)
-  readr::write_csv(elem_err_long, fn)
-  return(elem_err_long)
-}
-#==============================================================================
-#' @title Summarize errors by member
-#' @description A production member is defined as the unique grouping of all cases, well/group names and keywords.  Summary statistics are calculated for each member.
-#' @param long The full path to a .csv, .xls, or .xlsx file containing production history data.
-#' @param basedir The path to the base directory of a simulation project.  The default is a subdirectory of the current directory called "tmp".  This is necessary for saving the results.
-#' @param skip_cases It may be inappropriate to include some cases in the eroor statistics.  The default is to skip all cases with HIST in the name.  This parameter may be a character vector and/or a case insensitive regular expression.
-#' @details The statistics calculated for each error(ERR) and error fraction (FRAC_ERR) are minimum, maximum, mean, mean of absolute values, the approximate probability for the Shapiro-Wilk Normality test, and the slope of the errors with respect to date.  The probability associated with the Shapiro-Wilk test is a null hypothesis probability, that is, the smaller it is, the more likely that the tested sample is from a normal distribution.
+#' @param skip_cases It may be inappropriate to include some cases in the error statistics.  The default is to skip all cases with HIST in the name.  This parameter may be a character vector and/or a case insensitive regular expression.
+#' @details The statistics calculated for each error(ERR) and error fraction (FRAC_ERR) are minimum, maximum, mean, mean of absolute values, the approximate probability for the Shapiro-Wilk Normality test, and the slope of the errors with respect to date.  The probability associated with the Shapiro-Wilk test is a null hypothesis probability, that is, the smaller it is, the more likely that the tested sample is from a normal distribution.  This approach probably isn't as good as looking at the residuals plot, but it may be helpful when trying to examine the errors for a large number of parameters.
+#'
+#' The intent of these criteria is to ensure that the quality of the fit to the historical data is comparable to the expected error in a forecast.  Unfortunately, trying to optimize multiple criteria is very compute intensive, so this may be a fool's game.  Perhaps the best approach will be to pick a single criteria for optimization, and then check the other criteria.
+#'
+#' A 'member' is the set of data associated with a particular CASENAME, WGNAME, and KEYWORD.  The items within a member each have different dates.  The 'member error' is the summary statistic comparing this member to the equivalent data for the base case.
+#'
+#' An 'element' is the set of data associated with a particular WGNAME, KEYWORD, and ERRORTYPE.  The items within an element each have different casenames.  A  proxy model created from an element will allow one to estimate the value of an error based on the input values to an experimental design.
 #' @return Returns a data frame with various summary statistics for each member, and wrties out a csv file in the REPORTS directory.
 #' @export
 #------------------------------------------------------------------------------
-ErrorByMember <- function(long, basedir = "tmp", skip_cases = "HIST"){
+ErrorByMember <- function(long,
+                          basedir = "tmp",
+                          skip_cases = "HIST",
+                          wgnames = NULL,
+                          keywords = NULL,
+                          errortypes = NULL){
   # this is phenomenally slow, and needs to be refactored
-  # need to add ways to select wgn, keyword, and error typ
+  # Need to add ways to select wgn, keyword, and error type
+  # Consider creating in long format, rather than wide to
+  #  avoid unk|uninit errors
   skip_filt <- rep(FALSE, nrow(long))
   if (!is.null(skip_cases)) {
     skip_filt <- rep(TRUE, nrow(long))
@@ -290,15 +189,32 @@ SobelSensitivity <- function(hmvars = NULL, member_error = NULL,
 # Error: cannot allocate vector of size 54.6 Gb
 #==============================================================================
 #' @title SelectModels:  Help filter the member error data frame to select data for the desired kriged models
-#' @description blah
-#' @param member_error blah
-#' @param basedir blah
-#' @param wgnames blah
-#' @param keywords blah
-#' @param errortypes blah
+#' @description This function creates a dataframe of desired unique groupings of WGNAMES, KEYWORDS, and ERRORTYPES available in the member error dataframe, and filters to retrieve this data.
+#' @param basedir The path to the base directory of a simulation project.  The default is a subdirectory of the current directory called "tmp".  This is necessary for saving the results.
+#' @param wgnames A list of Well/Group names to be selected from the member error dataframe.
+#' @param keywords A list of keywords to be selected from the member error dataframe.
+#' @param errortypes A list of error types to be selected from the member error dataframe.
 #' @details blah
-#' @return blah
+#' @return The model selection object:
+#' \describe{
+#'   \item{"model_selection$all_choices"}{"A data frame giving all combinations of WGNAME, KEYWORD, and ERRORTYPE available in the member error dataframe"}
+#'   \item{"model_selection$WGNAME"}{"A vector with all of the Well/Group names available in the member error dataframe"}
+#'   \item{"model_selection$KEYWORD"}{"A vector with all of the keywords available in the member error dataframe"}
+#'   \item{"model_selection$ERRORTYPE"}{"A vector with all of the error types available in the member error dataframe"}
+#'   \item{"model_selection$filt"}{"A filter that will retrieve all of the necessary data from the member error dataframe"}
+#'   \item{"model_selection$choice"}{"A dataframe showing the "}
+#'   \item{"model_selection$kmfilt"}{}
+#' }
 #' @export
+
+# model_selection$all_choices
+# model_selection$WGNAME
+# model_selection$KEYWORD
+# model_selection$ERRORTYPE
+# model_selection$filt
+# model_selection$choice
+# model_selection$kmfilt
+
 #------------------------------------------------------------------------------
 SelectModels <- function(member_error = NULL, basedir = "tmp", wgnames = NULL,
                          keywords = NULL, errortypes = NULL){
@@ -333,11 +249,14 @@ SelectModels <- function(member_error = NULL, basedir = "tmp", wgnames = NULL,
   model_selection[["KEYWORD"]] <- unique(member_error[,"KEYWORD"])
   model_selection[["ERRORTYPE"]] <- unique(member_error[,"ERRORTYPE"])
   model_selection[["filt"]] <- filt
-  model_selection[["choice"]] <- unique(member_error[filt, wke])
-  rownames(model_selection$choice) <- paste(model_selection$choice$WGNAME,
-                                           model_selection$choice$KEYWORD,
-                                           model_selection$choice$ERRORTYPE,
-                                           sep = ".")
+  model_selection[["choice"]] <- as.data.frame(unique(member_error[filt, wke]))
+  rnames <- paste(
+    model_selection$choice$WGNAME,
+    model_selection$choice$KEYWORD,
+    model_selection$choice$ERRORTYPE,
+    sep = "."
+  )
+  rownames(model_selection$choice) <- rnames
   kmfilt <- apply(model_selection$choice, 1, .WKE2Filt,
                   member_error = member_error)
   model_selection[["kmfilt"]] <- data.frame(kmfilt)
@@ -353,7 +272,7 @@ SelectModels <- function(member_error = NULL, basedir = "tmp", wgnames = NULL,
 #' @param model_selection This is output by the SelectModels function, and contains the filters to be used on the member error data to select the appropriate data for each kriged model.
 #' @param basedir The path to the base directory of a simulation project.  The default is a subdirectory of the current directory called "tmp".  This is necessary for saving the results.
 #' @details blah
-#' @return blah
+#' @return Returns a list of kriged models, one model for each of the elements selected in the model selection object
 #' @export
 #------------------------------------------------------------------------------
 BuildKModels <- function(hmvars = NULL, member_error = NULL,
@@ -370,7 +289,7 @@ BuildKModels <- function(hmvars = NULL, member_error = NULL,
   kmfilt <- model_selection$kmfilt
   kmodels <- apply(kmfilt, 2, .Filt2KM, design = design,
                           member_error = member_error)
-  km_path <- file.path(report_path, paste0(objname, "_km.rds"))
+  km_path <- file.path(reportsdir, paste0(objname, "_km.rds"))
   saveRDS(object = kmodels, file = km_path)
   return(kmodels)
 } # end function
@@ -558,7 +477,9 @@ RunGPareto <- function(kmodels = NULL, method = "genoud", basedir = "tmp", ...){
   return(results)
 }
 #==============================================================================
-.List2Filt <- function(filt_list, filt_col){
+# supply a list of parameters and a column containg the parameters
+# function returns a filter to include all rows for the input list
+.List2Fil <- function(filt_list, filt_col){
   filt <- rep(FALSE, length(filt_col))
   nfilt <- length(filt_list)
   for (i in 1:nfilt) {
@@ -573,6 +494,9 @@ RunGPareto <- function(kmodels = NULL, method = "genoud", basedir = "tmp", ...){
 # sum(test)
 # [1] 50400
 #==============================================================================
+# Supply a member error data frame and a list with WGNAMES, KEYWORD, and
+#     ERRORTYPE
+# Returns a filter to retrieve all cases and dates for the WKE combination
 .WKE2Filt <- function(member_error = NULL, wke = c(NULL, NULL, NULL)){
   WGNAME = wke[1]
   KEYWORD = wke[2]
@@ -621,13 +545,17 @@ RunGPareto <- function(kmodels = NULL, method = "genoud", basedir = "tmp", ...){
 .Long2WideError <- function(member_error, model_selection){
   filt_df <- model_selection$kmfilt
   me_val <- member_error$VALUE
+  me_case <- member_error$CASENAME
   f <- function(me_val, filt_df){me_val[filt_df]}
   wide_response <- as.data.frame(apply(filt_df, 2, f, me_val = me_val))
+  # below here is just to check the error names are correct
+  wr_case <- as.data.frame(apply(filt_df, 2, f, me_val = me_case))
+  g <- function(x){length(unique(x)) == 1}
+  consistent_names <- all(apply(wr_case, 1, g))
+  if (consistent_names) {
+    rownames(wide_response) <- wr_case[,1]
+  } else {stop("Bummer!  Error values are out of order.")}
   return(wide_response)
 }
-# member_error <- member_error
-# model_selection <- spe9_mod_sel
-# wide_response <- runOPM:::.Long2WideError(member_error, spe9_mod_sel)
-# summary(wide_response)
-# head(wide_response)
+#
 #==============================================================================

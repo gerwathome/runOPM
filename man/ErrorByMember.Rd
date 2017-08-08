@@ -2,23 +2,28 @@
 % Please edit documentation in R/06_runhm.R
 \name{ErrorByMember}
 \alias{ErrorByMember}
-\title{Summarize errors by member}
+\title{Calculate the differences between the base case and the simulation runs}
 \usage{
-ErrorByMember(long, basedir = "tmp", skip_cases = "HIST")
+ErrorByMember(long, basedir = "tmp", skip_cases = "HIST", wgnames = NULL,
+  keywords = NULL, errortypes = NULL)
 }
 \arguments{
 \item{long}{The full path to a .csv, .xls, or .xlsx file containing production history data.}
 
 \item{basedir}{The path to the base directory of a simulation project.  The default is a subdirectory of the current directory called "tmp".  This is necessary for saving the results.}
 
-\item{skip_cases}{It may be inappropriate to include some cases in the eroor statistics.  The default is to skip all cases with HIST in the name.  This parameter may be a character vector and/or a case insensitive regular expression.}
+\item{skip_cases}{It may be inappropriate to include some cases in the error statistics.  The default is to skip all cases with HIST in the name.  This parameter may be a character vector and/or a case insensitive regular expression.}
 }
 \value{
 Returns a data frame with various summary statistics for each member, and wrties out a csv file in the REPORTS directory.
 }
 \description{
-A production member is defined as the unique grouping of all cases, well/group names and keywords.  Summary statistics are calculated for each member.
+This calculates the difference between a base case and a simulation case, as well as the fractional difference.
 }
 \details{
-The statistics calculated for each error(ERR) and error fraction (FRAC_ERR) are minimum, maximum, mean, mean of absolute values, the approximate probability for the Shapiro-Wilk Normality test, and the slope of the errors with respect to date.  The probability associated with the Shapiro-Wilk test is a null hypothesis probability, that is, the smaller it is, the more likely that the tested sample is from a normal distribution.
+The statistics calculated for each error(ERR) and error fraction (FRAC_ERR) are minimum, maximum, mean, mean of absolute values, the approximate probability for the Shapiro-Wilk Normality test, and the slope of the errors with respect to date.  The probability associated with the Shapiro-Wilk test is a null hypothesis probability, that is, the smaller it is, the more likely that the tested sample is from a normal distribution.  This approach probably isn't as good as looking at the residuals plot, but it may be helpful when trying to examine the errors for a large number of parameters.
+
+The intent of these criteria is to ensure that the quality of the fit to the historical data is comparable to the expected error in a forecast.  Unfortunately, trying to optimize multiple criteria is very compute intensive, so this may be a fool's game.  Perhaps the best approach will be to pick a single criteria for optimization, and then check the other criteria.
+
+A 'member' is the set of data associated with a particular CASENAME, WGNAME, and KEYWORD.  The 'member error' is the summary statistic comparing this member to the equivalent data for the base case.
 }
