@@ -14,9 +14,10 @@ deckdir <- file.path(basedir, "DECKS")
 templatepath <- file.path(deckdir, template)
 griddir <- file.path(deckdir, "GRID")
 if (!dir.exists(griddir)) {dir.create(griddir)}
-file.copy(from.perm.inc.path, file.path(griddir, "PERMVALUES.INC"),
+ok <- file.copy(from.perm.inc.path, file.path(griddir, "PERMVALUES.INC"),
           overwrite = TRUE)
-file.copy(from.grdecl.path, file.path(griddir, "SPE9.GRDECL"), overwrite = TRUE)
+ok <- file.copy(from.grdecl.path, file.path(griddir, "SPE9.GRDECL"),
+                overwrite = TRUE)
 spe9vars <- ReadTemplate(from.template.path, "spe9hm")
 #------------------------------------------------------------------------------
 test_that("ReadTemplate works", {

@@ -14,7 +14,7 @@ EditVar(obj = NULL, pattern = NULL, basedir = "tmp",
 
 \item{basedir}{The path to the base directory of a simulation project.  The default is a subdirectory of the current directory called "tmp".  This is used to store the edited object.}
 
-\item{objname}{This is used to save the edited object to a file. It defaults to the name of the tempate used to create the object}
+\item{objname}{This is used to save the edited object to a file. It defaults to the name of the template used to create the object}
 
 \item{...}{A series of param = value pairs that define how the parameter values associated with a particular variable identified by "pattern" are to be set.}
 }

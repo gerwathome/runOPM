@@ -85,7 +85,7 @@ ReadTemplate <- function(template = NULL, basedir = "tmp"){
 #' @param obj The name of an hmvars object.
 #' @param pattern A perl compatible regular expression identifying the variable name for which parmeters are being edited.
 #' @param basedir The path to the base directory of a simulation project.  The default is a subdirectory of the current directory called "tmp".  This is used to store the edited object.
-#' @param objname This is used to save the edited object to a file. It defaults to the name of the tempate used to create the object
+#' @param objname This is used to save the edited object to a file. It defaults to the name of the template used to create the object
 #' @param ... A series of param = value pairs that define how the parameter values associated with a particular variable identified by "pattern" are to be set.
 #' @details hmvars$vars dataframe has a row for each variable in the template deck and columns defining the characteristics of the distribution of the variable.  The parameters being edited here are the distribution characteristics for each variable.  The most important characteristics are truncLow and truncHigh, as these values are used to convert back and forth between coded and uncoded experimental designs.  If these values are not supplied, then creating an experimental design will fail.
 #'
@@ -153,10 +153,33 @@ EditVar <- function(obj = NULL, pattern = NULL, basedir = "tmp",
       obj$vars[i,param] <- passedparams[param]
     }
   }
+  # before this edits the vars part of hmvars
+  # after this edits varsLong
+  # the plan is to eventually dump the vars part of the object
+  #
+  # the first part duplicates stuff from above, for later use
+  # passedparams <- as.list(match.call())[-1]
+  # ppnames <- names(passedparams)
+  #
+  filtParams <- grepl("^obj|pattern|basedir|objname$",
+                      x = ppnames,
+                      ignore.case = TRUE,
+                      perl = TRUE)
+  passedparams <- passedparams[!filtParams]
+  ppnames <- ppnames[!filtParams]
+  varnames <- unique(obj$varsLong$name)
+  filtNames <- grepl(pattern,
+                     x = varnames,
+                     perl = TRUE)
+  varnames <- varnames[filtNames]
+  namesParams <- expand.grid(varnames, ppnames, stringsAsFactors = FALSE)
+  colnames(namesParams) <- c("name", "paramName")
+  print(namesParams)
+  # save the edited object
   basedir <- .CheckBasedir(basedir)
   decksdir <- file.path(basedir,"DECKS")
   rdsfn <- file.path(decksdir, paste0(objname, ".rds"))
-   saveRDS(obj, file = rdsfn)
+  saveRDS(obj, file = rdsfn)
   return(obj)
 }
 #==============================================================================
