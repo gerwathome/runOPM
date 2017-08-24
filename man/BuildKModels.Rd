@@ -17,7 +17,7 @@ BuildKModels(hmvars = NULL, member_error = NULL, model_selection = NULL,
 \item{basedir}{The path to the base directory of a simulation project.  The default is a subdirectory of the current directory called "tmp".  This is necessary for saving the results.}
 }
 \value{
-blah
+Returns a list of kriged models, one model for each of the elements selected in the model selection object
 }
 \description{
 This function creates a kriged model from the experimental design, the simulation results, and the chosen response variables.

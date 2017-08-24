@@ -1,6 +1,7 @@
 context("Running the HM, gathering results and calculating errors")
 
 #==============================================================================
+#setwd("/home/gerw/gitrepos/runOPM/tests/testthat")
 basedir <- "spe9hm"
 basedir <- .CheckBasedir(basedir)
 hist_csv_name <-  system.file("testdata", "HIST_CSV.csv", package = "runOPM")
@@ -51,10 +52,10 @@ spe9vars <- EditVar(spe9vars, pattern = "PORO", truncLow = 1,
 spe9vars <- EditVar(spe9vars, pattern = "PERM", truncLow = 1,
                     truncHigh = 1, param1 = 1, param2 = 1,
                     basedir = basedir)
-spe9vars <- EditVar(spe9vars, pattern = "PERM[123]", truncLow = 0.1,
+spe9vars <- EditVar(spe9vars, pattern = "PERMX_0[123]", truncLow = 0.1,
                     truncHigh = 1.5, param1 = 0.1, param2 = 2.0,
                     basedir = basedir)
-
+# obj <- spe9vars
  set.seed(424242)
  spe9vars <- ExpDes(spe9vars, edtype = "augfpb", basedir = basedir)
  spe9decks <- BuildDecks(spe9vars, template = templatepath,  basedir = basedir,
@@ -145,7 +146,7 @@ test_that("More stuff works", {
 #==============================================================================
 # misc experimentation
 rm(list = ls())
-setwd("/home/gerw/gitrepos/runOPM/tests/testthat")
+#setwd("/home/gerw/gitrepos/runOPM/tests/testthat")
 hvfn <- "/home/gerw/gitrepos/runOPM/tests/testthat/spe9hm/DECKS/SPE9_hmvars.rds"
 spe9vars <- readRDS(hvfn)
 
@@ -160,9 +161,9 @@ optfn <- "/home/gerw/gitrepos/runOPM/tests/testthat/spe9hm/REPORTS/spe_km_opt.rd
 spe9_opt <- readRDS(optfn)
 
 projsumfn <- "/home/gerw/gitrepos/runOPM/tests/testthat/BIGFILES/PROJSUM.csv"
-spe9rslts <- readr::read_csv(projsumfn, col_types = runOPM:::.LongColSpec())
+spe9rslts <- readr::read_csv(projsumfn, col_types =.LongColSpec())
 
-wide_response <- runOPM:::.Long2WideError(spe9_mem_err, spe9_mod_sel)
+wide_response <-.Long2WideError(spe9_mem_err, spe9_mod_sel)
 ma <- function(x){mean(abs(x))}
 MeanAbsOpt <- apply(spe9_opt$values,1,ma)
 MeanAbs <- apply(wide_response,1,ma)
@@ -178,6 +179,6 @@ longdata = spe9rslts
 casenames = best10
 wgnames = "FIELD"
 keywords = c("WOPR", "WGPR", "WWPR")
-vars.long.df <- runOPM:::.BuildPlotFIlter(longdata,
+vars.long.df <-.BuildPlotFIlter(longdata,
                                  casenames = casenames, wgnames = wgnames,
                                  keywords = keywords)

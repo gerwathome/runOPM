@@ -149,7 +149,7 @@ EclSum <- function(casename = "^.+", basedir = "tmp"){
                          ...){
    ext <- c("\\.F*UNSMRY")
   #  ext <- c(".unsmry", ".UNSMRY", ".funsmry", ".FUNSMRY")
-  basedir <- .CheckBasedir(basedir)
+  # basedir <- .CheckBasedir(basedir)
   sumfiles <- .FindDecks(basedir = basedir,
                          casename = casename,
                          ext = ext,

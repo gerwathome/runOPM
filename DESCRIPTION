@@ -27,7 +27,11 @@ Imports: ggplot2,
     Rcpp,
     readxl,
     colorspace,
-    pals
+    pals,
+    DiceKriging,
+    GPareto,
+    multisensi,
+    tidyr
 Suggests: knitr,
     rmarkdown,
     testthat,

@@ -2,10 +2,10 @@
 % Please edit documentation in R/06_runhm.R
 \name{ErrorByMember}
 \alias{ErrorByMember}
-\title{Calculate the differences between the base case and the simulation runs}
+\title{Summarize errors by member}
 \usage{
 ErrorByMember(long, basedir = "tmp", skip_cases = "HIST", wgnames = NULL,
-  keywords = NULL, errortypes = NULL)
+  keywords = NULL, errortypes = c("ABS_MEAN_FRAC_ERR"))
 }
 \arguments{
 \item{long}{The full path to a .csv, .xls, or .xlsx file containing production history data.}
@@ -13,17 +13,25 @@ ErrorByMember(long, basedir = "tmp", skip_cases = "HIST", wgnames = NULL,
 \item{basedir}{The path to the base directory of a simulation project.  The default is a subdirectory of the current directory called "tmp".  This is necessary for saving the results.}
 
 \item{skip_cases}{It may be inappropriate to include some cases in the error statistics.  The default is to skip all cases with HIST in the name.  This parameter may be a character vector and/or a case insensitive regular expression.}
+
+\item{wgnames}{A list with well/group/field names for which errors need to be calculated.  Default is all WELL/FIELD/GROUP names in the dataframe.}
+
+\item{keywords}{A list with parameters to be for which errors need to be calculated, e.g. "WOPR".  Default is all keywords in the dataframe.}
+
+\item{errortypes}{A list with error types to be calculated.  Available error types are c("ABS_MEAN_ERR", "ABS_MEAN_FRAC_ERR", "MAX_ERR", "MAX_FRAC_ERR", "MEAN_ERR", "MEAN_FRAC_ERR", "MIN_ERR", "MIN_FRAC_ERR", "NORM_PROB_ERR", "NORM_PROB_FRAC_ERR", "SLOPE_ERR", "SLOPE_FRAC_ERR")  The default is "ABS_MEAN_FRAC_ERR".}
 }
 \value{
 Returns a data frame with various summary statistics for each member, and wrties out a csv file in the REPORTS directory.
 }
 \description{
-This calculates the difference between a base case and a simulation case, as well as the fractional difference.
+A member is defined as the data associated with a unique grouping of all cases, well/group names and keywords.  Summary statistics are calculated for each member.
 }
 \details{
 The statistics calculated for each error(ERR) and error fraction (FRAC_ERR) are minimum, maximum, mean, mean of absolute values, the approximate probability for the Shapiro-Wilk Normality test, and the slope of the errors with respect to date.  The probability associated with the Shapiro-Wilk test is a null hypothesis probability, that is, the smaller it is, the more likely that the tested sample is from a normal distribution.  This approach probably isn't as good as looking at the residuals plot, but it may be helpful when trying to examine the errors for a large number of parameters.
 
 The intent of these criteria is to ensure that the quality of the fit to the historical data is comparable to the expected error in a forecast.  Unfortunately, trying to optimize multiple criteria is very compute intensive, so this may be a fool's game.  Perhaps the best approach will be to pick a single criteria for optimization, and then check the other criteria.
 
-A 'member' is the set of data associated with a particular CASENAME, WGNAME, and KEYWORD.  The 'member error' is the summary statistic comparing this member to the equivalent data for the base case.
+A 'member' is the set of data associated with a particular CASENAME, WGNAME, and KEYWORD.  The items within a member each have different dates.  The 'member error' is the summary statistic comparing this member to the equivalent data for the base case.
+
+An 'element' is the set of data associated with a particular WGNAME, KEYWORD, and ERRORTYPE.  The items within an element each have different casenames.  A  proxy model created from an element will allow one to estimate the value of an error based on the input values to an experimental design.
 }

@@ -12,9 +12,11 @@ PlotEach(longdata, casenames = NULL, wgnames = NULL, keywords = NULL,
 
 \item{casenames}{A list with casenames to be plotted.  Default is all casenames in the dataframe.}
 
-\item{wgnames}{A list with well/group/filed names to be plotted.  Default is all WELL/FIELD/GROUP names in the dataframe.}
+\item{wgnames}{A list with well/group/field names to be plotted.  Default is all WELL/FIELD/GROUP names in the dataframe.}
 
 \item{keywords}{A list with parameters to be plotted, e.g. "WOPR".  Default is all keywords in the dataframe.}
+
+\item{basecase}{The case against which all others will be compared.}
 
 \item{ncolumns}{How many columns of plots to display.  The default is a display 3 columns wide, with as many rows as necessary to plot all of the desired plots.}
 }

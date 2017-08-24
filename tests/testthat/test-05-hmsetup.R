@@ -1,6 +1,7 @@
 context("Setting up for the history match")
 
 #==============================================================================
+#setwd("/home/gerw/gitrepos/runOPM/tests/testthat")
 template <- "SPE9.TEMPLATE"
 from.template.path <-  system.file("extdata", template, package = "runOPM")
 from.perm.inc.path <-  system.file("extdata", "GRID", "PERMVALUES.INC",
@@ -25,13 +26,23 @@ test_that("ReadTemplate works", {
 #==============================================================================
 # These parameters are multipliers, not absolute values
 # A value of 1 would give a model equivalent to the unmodified SPE9 case
-spe9vars <- EditVar(spe9vars, pattern = "PORO", truncLow = 0.1,
-                    truncHigh = 2, param1 = 0.1, param2 = 2.0,
+# 30 variables
+# spe9vars <- EditVar(spe9vars, pattern = "PORO", truncLow = 0.1,
+#                      truncHigh = 2, param1 = 0.1, param2 = 2.0,
+#                      basedir = basedir)
+# spe9vars <- EditVar(spe9vars, pattern = "PERM", truncLow = 0.1,
+#                      truncHigh = 1.5, param1 = 0.1, param2 = 2.0,
+#                      basedir = basedir)
+# 3 variables
+spe9vars <- EditVar(spe9vars, pattern = "PORO", truncLow = 1,
+                    truncHigh = 1, param1 = 1, param2 = 1,
                     basedir = basedir)
-spe9vars <- EditVar(spe9vars, pattern = "PERM", truncLow = 0.1,
+spe9vars <- EditVar(spe9vars, pattern = "PERM", truncLow = 1,
+                    truncHigh = 1, param1 = 1, param2 = 1,
+                    basedir = basedir)
+spe9vars <- EditVar(spe9vars, pattern = "PERMX_0[123]", truncLow = 0.1,
                     truncHigh = 1.5, param1 = 0.1, param2 = 2.0,
-                    basedir = basedir)
-#------------------------------------------------------------------------------
+                    basedir = basedir)#------------------------------------------------------------------------------
 test_that("EditVar works", {
   expect_s3_class(spe9vars, "hmvars")
   expect_equal_to_reference(spe9vars$vars, "spe9vars_vars.rds")
@@ -39,10 +50,10 @@ test_that("EditVar works", {
 #==============================================================================
 # this will take more testing when there are more type choices
 # also need to test coded / uncoded translation
-print(paste0("ncases should be 0:  ", nrow(spe9vars$expDesignCoded)))
+# print(paste0("ncases should be 0:  ", nrow(spe9vars$expDesignCoded)))
 set.seed(424242)
 spe9vars <- ExpDes(spe9vars, edtype = "fpb", basedir = basedir)
-print(paste0("ncases should be 64:  ", nrow(spe9vars$expDesignCoded)))
+# print(paste0("ncases should be 64:  ", nrow(spe9vars$expDesignCoded)))
 #------------------------------------------------------------------------------
 test_that("ExpDes works", {
   expect_equal_to_reference(spe9vars$expDesignCoded,

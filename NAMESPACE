@@ -3,6 +3,7 @@
 export(AugExpDes)
 export(BuildDecks)
 export(BuildKModels)
+export(CalcErrors)
 export(EclSum)
 export(EditVar)
 export(ErrorByMember)

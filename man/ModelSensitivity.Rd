@@ -8,9 +8,13 @@ ModelSensitivity(hmvars = NULL, member_error = NULL,
   model_selection = NULL, basedir = "tmp")
 }
 \arguments{
-\item{basedir}{blah}
+\item{hmvars}{blah}
 
-\item{template}{blah}
+\item{member_error}{blah}
+
+\item{model_selection}{blah}
+
+\item{basedir}{blah}
 }
 \value{
 blah

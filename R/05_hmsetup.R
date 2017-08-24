@@ -31,11 +31,17 @@ ReadTemplate <- function(template = NULL, basedir = "tmp"){
   nvars <- length(varnames)
   # There should be a way to have an undefined number of parameters and
   # discrete values.  Discrete values are expected to be INCLUDE file names.
+  #   Discrete values will be factors with levels in alpha numeric order.
+  #
   #  Also need to figure out how to interpose a function between variable
   # definition and writing out the deck.  The hmvars object needs more thought
-  # about its basic design
+  # about its basic design.  I'm moving towards a long format.
+  #
+  # A variable is made inactive by setting a non-null default value or by
+  #  setting truncLow == TruncHigh, which then becomes the default value.
+  #    The latter method is dominant if both are set.
   hmvars <- list(vars = data.frame(name = character(nvars),
-                                   distribution = character(nvars),
+                                   distType = character(nvars),
                                    truncLow = numeric(nvars),
                                    truncHigh = numeric(nvars),
                                    param1 = numeric(nvars),
@@ -46,16 +52,29 @@ ReadTemplate <- function(template = NULL, basedir = "tmp"){
                                    discrete3 = character(nvars),
                                    discrete4 = character(nvars),
                                    discrete5 = character(nvars),
+                                   default = character(nvars),
                                    stringsAsFactors = FALSE
-                                   ),
-                expDesignCoded = data.frame(),
-                expDesignUncoded = data.frame(),
-                template_name = objname
+  ),
+  # Available parameter types: distType, truncLow, truncHigh, mean, stddev,
+  #                            alpha, beta, discrete, default
+  varsLong  = runOPM:::.HmvarsVarsLongDefinition(nvars),
+  expDesignCoded = data.frame(),
+  expDesignUncoded = data.frame(),
+  template_name = objname
   ) # end of class definition
   class(hmvars) <- "hmvars"
   rownames(hmvars$vars) <- NULL
   hmvars$vars$name <- varnames
-  hmvars$vars$distribution <- rep("unif",nvars)
+  hmvars$vars$distType <- rep("unif", nvars)
+  hmvars$vars$default <- rep(NULL, nvars)
+  hmvars$varsLong$name <- varnames
+  hmvars$varsLong$paramName <- rep("distType", nvars)
+  hmvars$varsLong$paramValue <- rep("unif", nvars)
+  tmp  <- runOPM:::.HmvarsVarsLongDefinition(nvars)
+  tmp$name <- varnames
+  tmp$paramName <- rep("default", nvars)
+#  tmp$paramValue <- rep(list(NULL), nvars)
+  hmvars$varsLong <- rbind(hmvars$varsLong, tmp)
   rdsfn <- file.path(decksdir, paste0(objname, ".rds"))
   saveRDS(hmvars, file = rdsfn)
   return(hmvars)
@@ -70,7 +89,7 @@ ReadTemplate <- function(template = NULL, basedir = "tmp"){
 #' @param ... A series of param = value pairs that define how the parameter values associated with a particular variable identified by "pattern" are to be set.
 #' @details hmvars$vars dataframe has a row for each variable in the template deck and columns defining the characteristics of the distribution of the variable.  The parameters being edited here are the distribution characteristics for each variable.  The most important characteristics are truncLow and truncHigh, as these values are used to convert back and forth between coded and uncoded experimental designs.  If these values are not supplied, then creating an experimental design will fail.
 #'
-#' The parameter pairs specified in the ... argument are subject to change, as I am not yet comfortable what this data structure should look like.  Currently, the parameters are: c("distribution", "truncLow", "truncHigh", "param1", "param2", "param3", "discrete1", "discrete2", "discrete3", "discrete4", "discrete5"). The default for distribution is "unif".  The parameters are used as necessary for different distributions, e.g. for "norm", parameter1 is the mean and paramter2 is the standard deviation.  The distribution types are implemented with package "truncdist".
+#' The parameter pairs specified in the ... argument are subject to change, as I am not yet comfortable what this data structure should look like.  Currently, the parameters are: c("distType", "truncLow", "truncHigh", "param1", "param2", "param3", "discrete1", "discrete2", "discrete3", "discrete4", "discrete5"). The default for distType is "unif".  The parameters are used as necessary for different distributions, e.g. for "norm", parameter1 is the mean and paramter2 is the standard deviation.  The distribution types are implemented with package "truncdist".
 #'
 #' The discrete values are for non-numeric choices, e.g. file names of various include files.  These are not currently implemented, but will be soon.  When including discrete values, they should be named carefully.  The names should be legal file names, i.e. alphanumeric characters not starting with a number.  The names will be ordered alpha numerically from lowest to highest, equally spaced from an experimental design point of view. For example, c("p01_relperm", "p50_relperm", "p99_relperm") would have coded design values of c(-1, 0, 1).  Some method of assigning distribution types and probabilities to discrete values may eventually be implemented.
 #'
@@ -196,24 +215,31 @@ ExpDes <- function(obj=NULL, edtype = "augfpb", ncases = NULL, basedir = "tmp",
   }
   low.values <- obj$vars$truncLow
   high.values <- obj$vars$truncHigh
-  if (!all(high.values >  low.values)) {
-    stop(paste0("truncLow and truncHigh values must be supplied for each",
-                " variable in the hmvars object, and each truncHigh must",
-                " be greater than truncLow"))
+  desVarsFilt <- obj$vars$truncLow < obj$vars$truncHigh
+  if (sum(desVarsFilt) == 0) {
+    stop(paste0("If truncLow >= truncHigh, the variable is made inactive.  If",
+                " there are no active variables, no experimental design is",
+                " created."))
   }
+  obj$designVars <- obj$vars[desVarsFilt,]
   factor.names <- obj$vars$name
   nvars <- length(factor.names)
+  design.factor.names <- obj$designVars$name
+  ndesvars <- length(design.factor.names)
   if (is.null(ncases)) {
-    ncases <- 10 * nvars
+    ncases <- 10 * ndesvars
   }
   # do pbed and fpbed need to be created here to scope properly?
   # pbed <- data.frame()
   # fpbed <- data.frame()
   # create a pb design
   if (edtype == "pb" | edtype == "fpb" | edtype == "augfpb") {
-    nruns <- ceiling((length(factor.names) + 1 ) / 4) * 4
-    pbtext <- paste0("FrF2::pb(nruns = nruns, ",
-                     "factor.names = factor.names)")
+    # for some reason, nruns=4 fails for pb
+    nruns <- ceiling((length(design.factor.names) + 1 ) / 4) * 4
+    nruns <- max(nruns, 8)
+    pbtext <- paste0("FrF2::pb(nruns = nruns,",
+                     " nfactors = length(design.factor.names),",
+                     " factor.names = design.factor.names)")
     pbed <- eval(parse(text = pbtext))
   }
   # create fpb design from the previously created pb design
@@ -225,7 +251,7 @@ ExpDes <- function(obj=NULL, edtype = "augfpb", ncases = NULL, basedir = "tmp",
     # this converts the design from factors to values, but changes the names
     fpbed <- DoE.base::desnum(fpbed)
     colnames(fpbed) <- fpbnames
-    fpbed <- fpbed[,factor.names]
+    fpbed <- fpbed[,design.factor.names]
   }
   # change pb from design class to numeric matrix and add to object obj
   if (edtype == "pb") {
@@ -234,12 +260,12 @@ ExpDes <- function(obj=NULL, edtype = "augfpb", ncases = NULL, basedir = "tmp",
     pbed <- DoE.base::desnum(pbed)
     colnames(pbed) <- pbnames
     # remove descriptive columns
-    pbed <- pbed[,factor.names]
-    obj$expDesignCoded <- pbed
+    pbed <- pbed[,design.factor.names]
+    tempED <- pbed
   }
   # add fpb to object obj
   if (edtype == "fpb") {
-    obj$expDesignCoded <- fpbed
+    tempED <- fpbed
   }
   if (edtype == "augfpb") {
     fpbcases <- nrow(fpbed)
@@ -247,13 +273,20 @@ ExpDes <- function(obj=NULL, edtype = "augfpb", ncases = NULL, basedir = "tmp",
     fpb01 <- .Coded2Uncoded(fpbed, 0, 1)
     augfpb01 <- lhs::optAugmentLHS(fpb01, newcases, 5)
     augfpb <- .Uncoded2Coded(augfpb01, 0, 1)
-    obj$expDesignCoded <- augfpb
+    tempED <- augfpb
   }
   if (edtype == "lhs") {
     lhs01 <- lhs::improvedLHS(ncases, nvars)
+    # this converts from 'uncoded' between 0 and 1 to 'coded' between -1 and 1
     lhs <- .Uncoded2Coded(lhs01, 0, 1)
-    obj$expDesignCoded <- lhs
+    tempED <- lhs
   }
+  nr <- nrow(tempED)
+  obj$expDesignCoded <- matrix(data = rep(0, nr * nvars),
+                               nrow = nr, ncol = nvars)
+  colnames(obj$expDesignCoded) <- factor.names
+  obj$expDesignCoded[,design.factor.names] <- tempED
+
   rownames(obj$expDesignCoded) <- NULL
   # copy from coded to uncoded for dimensions and column names
   obj$expDesignUncoded <- obj$expDesignCoded
@@ -343,8 +376,11 @@ AugExpDes <- function(obj=NULL, edtype = "aug", ncases = 10, basedir = "tmp",
 
   factor.names <- obj$vars$name
   nvars <- length(factor.names)
+  design.factor.names <- obj$designVars$name
+  ndesvars <- length(design.factor.names)
+
   if (edtype == "aug") {
-    orig_des <- obj$expDesignCoded
+    orig_des <- obj$expDesignCoded[, design.factor.names]
     if (is.null(ncases)) {ncases <- 10}
     if (ncases < 1) {ncases <- 10}
     # convert from (-1, 1) to (0, 1)
@@ -352,7 +388,7 @@ AugExpDes <- function(obj=NULL, edtype = "aug", ncases = 10, basedir = "tmp",
     new_des_01 <- lhs::optAugmentLHS(orig_des_01, m = as.integer(ncases),
                                      mult = 5)
     new_des <- .Uncoded2Coded(new_des_01, 0, 1)
-    obj$expDesignCoded <- new_des
+    obj$expDesignCoded[, design.factor.names] <- new_des
     # copy from coded to uncoded for dimensions and column names
     obj$expDesignUncoded <- obj$expDesignCoded
     # calculate the uncoded values
@@ -521,10 +557,10 @@ BuildDecks <- function(obj, template, basedir = "tmp", overwrite = FALSE,
 .Coded2Uncoded <- function(coded, lu, hu, lc = -1, hc = 1){
   # lu = low uncoded; hu = high uncoded
   # lc = low coded; hc = high coded
-  if (any(lu >= hu)) {stop(paste("The low uncoded value must be less than the high",
-                            "uncoded value"))}
-  if (any(lc >= hc)) {stop(paste("The low coded value must be less than the high",
-                            "coded value"))}
+  if (any(lu > hu)) {stop(paste("The low uncoded value must be less than the",
+                                "high uncoded value"))}
+  if (any(lc >= hc)) {stop(paste("The low coded value must be less than the",
+                                "high coded value"))}
   m <- (hu - lu) / (hc - lc)
   b <- lu - m * lc
   uncoded <- m * coded + b
@@ -534,12 +570,18 @@ BuildDecks <- function(obj, template, basedir = "tmp", overwrite = FALSE,
 .Uncoded2Coded <- function(uncoded,lu, hu, lc = -1, hc = 1){
   # lu = low uncoded; hu = high uncoded
   # lc = low coded; hc = high coded
-  if (any(lu >= hu)) {stop(paste("The low uncoded value must be less than the high",
-                            "uncoded value"))}
-  if (any(lc >= hc)) {stop(paste("The low coded value must be less than the high",
-                            "coded value"))}
-  m <- (hc - lc) / (hu - lu)
-  b <- lc - m * lu
+  if (any(lu > hu)) {stop(paste("The low uncoded value must be less than the",
+                                "high uncoded value"))}
+  if (any(lc >= hc)) {stop(paste("The low coded value must be less than the",
+                                 "high coded value"))}
+  denom <- hu - lu
+  if (denom == 0) {
+    m <- 0
+    b <- 0
+  } else {
+    m <- (hc - lc) / denom
+    b <- lc - m * lu
+  }
   coded <- m * uncoded + b
   return(coded)
 }
@@ -559,4 +601,20 @@ BuildDecks <- function(obj, template, basedir = "tmp", overwrite = FALSE,
   return(basedir)
 }
 #==============================================================================
-
+.HmvarsVarsLongDefinition <- function(n = 0){
+  HmvarsVarsLong <- data.frame(name = character(n),
+                               paramName = character(n),
+                               # The paramValue is stored as a string, but one
+                               # should apply .str2val before using it
+                               paramValue = character(n),
+                               stringsAsFactors = FALSE)
+  return(HmvarsVarsLong)
+}
+#==============================================================================
+# this returns a numeric value if possible, or a string value otherwise
+.str2val <- function(string){
+  value <- suppressWarnings(as.numeric(string))
+  value <- ifelse(is.na(value), string, value)
+  return(value)
+}
+#==============================================================================

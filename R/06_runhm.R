@@ -52,9 +52,61 @@ ImportHist <- function(ssheetfile = NULL, basedir = "tmp", format = "%d-%b-%Y"){
 #==============================================================================
 #' @title Calculate the differences between the base case and the simulation runs
 #' @description This calculates the difference between a base case and a simulation case, as well as the fractional difference.
+#' @param long A long format data frame with historical data and the simulation results.
+#' @param basecase The case against which all others will be compared.
+#' @param basedir The path to the base directory of a simulation project.  The default is a subdirectory of the current directory called "tmp".
+#' @details First it is necessary to define the timesteps at which errors are going to be estimated.   The default dates will be those of the base case, and all other case values will need to be available at those dates (or interpolated to those dates, eventually).
+#'
+#' The difference between a case and the base will be called ERR. The ERR divided by the base value will be called FRAC_ERR.
+#' @return This returns a long format data frame with production data and the calculated errors.
+#' @export
+#------------------------------------------------------------------------------
+CalcErrors <- function(long = NULL, basecase = NULL, basedir = "tmp"){
+  # check inputs
+  basedir <- .CheckBasedir(basedir)
+  decksdir <-  file.path(basedir, "DECKS")
+  reportsdir <-  file.path(basedir, "REPORTS")
+  projsum <- file.path(reportsdir, "PROJSUM.csv")
+  if (is.null(long)) {
+    if (file.exists(projsum)) {
+      long <- readr::read_csv(projsum, col_types = .LongColSpec())
+    } else {stop("Failed to find historical and simulation data")}
+  }
+  cases <- unique(long$CASENAME)
+  if (!any(grepl(basecase, cases, fixed = TRUE))) {
+    stop(paste0("Failed to locate the base case ", basecase))
+  }
+  # calc errors as a vector
+  long_base <- long[long$CASENAME == basecase,
+                    c("DATE", "WGNAME", "KEYWORD", "VALUE")]
+  colnames(long_base) <- sub("VALUE", "BASE_VALUE", colnames(long_base),
+                             fixed = TRUE)
+  long_tmp <- dplyr::left_join(long, long_base,
+                               by = c("DATE", "WGNAME", "KEYWORD"))
+  long_tmp$ERR <- rep(NA, nrow(long_tmp))
+  long_tmp$FRAC_ERR <- rep(NA, nrow(long_tmp))
+  # we don't wish to calculate error if either value is effectively 0
+  tolerance = .Machine$double.eps^0.5
+  filt_value <- abs(long_tmp$VALUE - 0) < tolerance
+  filt_base_value <- abs(long_tmp$BASE_VALUE - 0) < tolerance
+  filt <- !filt_value & !filt_base_value
+  long_tmp$ERR[filt] <- long_tmp$VALUE[filt] - long_tmp$BASE_VALUE[filt]
+  long_tmp$FRAC_ERR[filt] <- long_tmp$ERR[filt] / long_tmp$BASE_VALUE[filt]
+  col_filt <- !grepl("BASE_VALUE", colnames(long_tmp), fixed = TRUE)
+  long <- long_tmp[, col_filt]
+  # write out results
+  readr::write_csv(long, projsum)
+  return(long)
+} # end function
+#==============================================================================
+#' @title Summarize errors by member
+#' @description A member is defined as the data associated with a unique grouping of all cases, well/group names and keywords.  Summary statistics are calculated for each member.
 #' @param long The full path to a .csv, .xls, or .xlsx file containing production history data.
 #' @param basedir The path to the base directory of a simulation project.  The default is a subdirectory of the current directory called "tmp".  This is necessary for saving the results.
 #' @param skip_cases It may be inappropriate to include some cases in the error statistics.  The default is to skip all cases with HIST in the name.  This parameter may be a character vector and/or a case insensitive regular expression.
+#' @param wgnames A list with well/group/field names for which errors need to be calculated.  Default is all WELL/FIELD/GROUP names in the dataframe.
+#' @param keywords A list with parameters to be for which errors need to be calculated, e.g. "WOPR".  Default is all keywords in the dataframe.
+#' @param errortypes A list with error types to be calculated.  Available error types are c("ABS_MEAN_ERR", "ABS_MEAN_FRAC_ERR", "MAX_ERR", "MAX_FRAC_ERR", "MEAN_ERR", "MEAN_FRAC_ERR", "MIN_ERR", "MIN_FRAC_ERR", "NORM_PROB_ERR", "NORM_PROB_FRAC_ERR", "SLOPE_ERR", "SLOPE_FRAC_ERR")  The default is "ABS_MEAN_FRAC_ERR".
 #' @details The statistics calculated for each error(ERR) and error fraction (FRAC_ERR) are minimum, maximum, mean, mean of absolute values, the approximate probability for the Shapiro-Wilk Normality test, and the slope of the errors with respect to date.  The probability associated with the Shapiro-Wilk test is a null hypothesis probability, that is, the smaller it is, the more likely that the tested sample is from a normal distribution.  This approach probably isn't as good as looking at the residuals plot, but it may be helpful when trying to examine the errors for a large number of parameters.
 #'
 #' The intent of these criteria is to ensure that the quality of the fit to the historical data is comparable to the expected error in a forecast.  Unfortunately, trying to optimize multiple criteria is very compute intensive, so this may be a fool's game.  Perhaps the best approach will be to pick a single criteria for optimization, and then check the other criteria.
@@ -70,7 +122,7 @@ ErrorByMember <- function(long,
                           skip_cases = "HIST",
                           wgnames = NULL,
                           keywords = NULL,
-                          errortypes = NULL){
+                          errortypes = c("ABS_MEAN_FRAC_ERR")){
   # this is phenomenally slow, and needs to be refactored
   # Need to add ways to select wgn, keyword, and error type
   # Consider creating in long format, rather than wide to
@@ -125,14 +177,16 @@ ErrorByMember <- function(long,
   }
   basedir <- .CheckBasedir(basedir)
   fn <- file.path(basedir, "REPORTS", "MemberErrorLong.csv")
-  mem_err_long <- tidyr::gather(member_error, ERRORTYPE, VALUE, -1:-3)
+  mem_err_long <- tidyr::gather(member_error, "ERRORTYPE", "VALUE", -1:-3)
   readr::write_csv(mem_err_long, fn)
   return(mem_err_long)
 }
 #==============================================================================
 #' @title blah
 #' @description blah
-#' @param template blah
+#' @param hmvars blah
+#' @param member_error blah
+#' @param model_selection blah
 #' @param basedir blah
 #' @details blah
 #' @return blah
@@ -151,7 +205,7 @@ ModelSensitivity <- function(hmvars = NULL, member_error = NULL,
   objname <- hmvars$template_name
   response <- .Long2WideError(member_error, model_selection)
   varsens <- multisensi::multisensi(design = design, model = response)
-  vs_path <- file.path(report_path, paste0(objname, "_varsens.rds"))
+  vs_path <- file.path(reportsdir, paste0(objname, "_varsens.rds"))
   saveRDS(object = varsens, file = vs_path)
   return(varsens)
 } # end function
@@ -161,7 +215,9 @@ ModelSensitivity <- function(hmvars = NULL, member_error = NULL,
 #==============================================================================
 #' @title blah
 #' @description blah
-#' @param template blah
+#' @param hmvars blah
+#' @param member_error blah
+#' @param model_selection blah
 #' @param basedir blah
 #' @details blah
 #' @return blah
@@ -180,7 +236,7 @@ SobelSensitivity <- function(hmvars = NULL, member_error = NULL,
   objname <- hmvars$template_name
   response <- .Long2WideError(member_error, model_selection)
   varsens <- multisensi::multisensi(design = design, model = response)
-  vs_path <- file.path(report_path, paste0(objname, "_varsens.rds"))
+  vs_path <- file.path(reportsdir, paste0(objname, "_varsens.rds"))
   saveRDS(object = varsens, file = vs_path)
   return(varsens)
 } # end function
@@ -190,6 +246,7 @@ SobelSensitivity <- function(hmvars = NULL, member_error = NULL,
 #==============================================================================
 #' @title SelectModels:  Help filter the member error data frame to select data for the desired kriged models
 #' @description This function creates a dataframe of desired unique groupings of WGNAMES, KEYWORDS, and ERRORTYPES available in the member error dataframe, and filters to retrieve this data.
+#' @param member_error A long format dataframe with member errors as calculated by the ErrorByMember function.
 #' @param basedir The path to the base directory of a simulation project.  The default is a subdirectory of the current directory called "tmp".  This is necessary for saving the results.
 #' @param wgnames A list of Well/Group names to be selected from the member error dataframe.
 #' @param keywords A list of keywords to be selected from the member error dataframe.
@@ -320,7 +377,7 @@ RunGPareto <- function(kmodels = NULL, method = "genoud", basedir = "tmp", ...){
   }
   opt_gen <- c(method = "genoud", fn = .kriging.mean, nvars = nvars, max = FALSE,
                hard.generation.limit = FALSE)
-  opt_pso <- c(method = "psoptim", fn = kriging.mean, maxit = 20) # doesn't work, yet
+  opt_pso <- c(method = "psoptim", fn = .kriging.mean, maxit = 20) # doesn't work, yet
   opt_list <- GPareto::GParetoptim(model = kmodels, fn = .kriging.mean.multi,
                                    nsteps = 10,  lower = rep(minval, nvars),
                                    upper = rep(maxval, nvars),
@@ -383,13 +440,13 @@ RunGPareto <- function(kmodels = NULL, method = "genoud", basedir = "tmp", ...){
 }
 #==============================================================================
 .ErrorByMemLongDefinition <- function(n = 0){
-  error_by_element <- data.frame(CASENAME = character(n),
+  error_by_member <- data.frame(CASENAME = character(n),
                                  WGNAME = character(n),
                                  KEYWORD = character(n),
                                  ERRORTYPE = character(n),
                                  VALUE = numeric(n),
                                  stringsAsFactors = FALSE)
-  return(error_by_element)
+  return(error_by_member)
 }
 #==============================================================================
 .ErrorByElementColSpec <- function(){
@@ -472,14 +529,14 @@ RunGPareto <- function(kmodels = NULL, method = "genoud", basedir = "tmp", ...){
                     nrow = ncases, ncol = nmodels)
   colnames(results) <- names(ml)
   for (i in 1:nmodels) {
-    results[,i] <- kriging.mean(Xnew, ml[[i]])
+    results[,i] <- .kriging.mean(Xnew, ml[[i]])
   }
   return(results)
 }
 #==============================================================================
 # supply a list of parameters and a column containg the parameters
 # function returns a filter to include all rows for the input list
-.List2Fil <- function(filt_list, filt_col){
+.List2Filt <- function(filt_list, filt_col){
   filt <- rep(FALSE, length(filt_col))
   nfilt <- length(filt_list)
   for (i in 1:nfilt) {

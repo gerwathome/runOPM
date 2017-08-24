@@ -10,12 +10,14 @@ if (dir.exists("testsim")) {
 if (dir.exists("spe9hm")) {
   unlink("spe9hm", recursive = TRUE)
 }
+rm(list = ls())
 #==============================================================================
-projdirs <- c(".", "./testdir", "./testdir/DECKS", "./testdir/OUTPUT",  "./testdir/REPORTS")
+projdirs <- c("testdir", "testdir/DECKS", "testdir/OUTPUT",
+              "testdir/REPORTS")
 #------------------------------------------------------------------------------
 test_that("make project works", {
   expect_warning(MakeProj("not_here.txt", "testdir"),"Failed to find deck")
-  expect_equal(list.dirs(recursive = TRUE), projdirs)
+  expect_equal(list.dirs("testdir", recursive = TRUE), projdirs)
 })
 # clean up
 unlink("testdir", recursive = TRUE)

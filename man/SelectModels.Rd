@@ -8,6 +8,8 @@ SelectModels(member_error = NULL, basedir = "tmp", wgnames = NULL,
   keywords = NULL, errortypes = NULL)
 }
 \arguments{
+\item{member_error}{A long format dataframe with member errors as calculated by the ErrorByMember function.}
+
 \item{basedir}{The path to the base directory of a simulation project.  The default is a subdirectory of the current directory called "tmp".  This is necessary for saving the results.}
 
 \item{wgnames}{A list of Well/Group names to be selected from the member error dataframe.}

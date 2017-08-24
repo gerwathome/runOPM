@@ -3,8 +3,9 @@
 #' @description This function accepts a long format dataframe as input, and creates plots using ggplot
 #' @param longdata A long format summary dataframe, not the csv file stored with each simulation case output.  This may be either the output of the eclsum function, or the file "REPORTS/PROJSUM.csv".
 #' @param casenames A list with casenames to be plotted.  Default is all casenames in the dataframe.
-#' @param wgnames A list with well/group/filed names to be plotted.  Default is all WELL/FIELD/GROUP names in the dataframe.
+#' @param wgnames A list with well/group/field names to be plotted.  Default is all WELL/FIELD/GROUP names in the dataframe.
 #' @param keywords A list with parameters to be plotted, e.g. "WOPR".  Default is all keywords in the dataframe.
+#' @param basecase The case against which all others will be compared.
 #' @param ncolumns How many columns of plots to display.  The default is a display 3 columns wide, with as many rows as necessary to plot all of the desired plots.
 #' @details The intent of this function is to compare multiple runs (i.e. "cases") on the same plot.  With too many cases, the plot will quickly become illegible, so a reasonable selection should be made.
 #' @export
@@ -17,9 +18,9 @@ PlotEach <- function(longdata,
   # all of the combinations of case, well and parameter with data
   allnames <- casenames
   if (!is.null(basecase)) {allnames <- c(casenames, basecase)}
-  vars.long.df <- runOPM:::.SelectPlotVars(longdata, casenames = allnames,
+  vars.long.df <- .SelectPlotVars(longdata, casenames = allnames,
                                   wgnames = wgnames, keywords = keywords)
-  all.plots.df <- runOPM:::.FilterLong(longdata, vars.long.df)
+  all.plots.df <- .FilterLong(longdata, vars.long.df)
   plot.vars.df <- unique(vars.long.df[,c("WGNAME", "KEYWORD")])
   np <- nrow(plot.vars.df)
   if (np < 1) {
@@ -58,7 +59,7 @@ PlotEach <- function(longdata,
     if (any(grep(b1pat,n,perl = TRUE)) |
         any(grep(b2pat,n,perl = TRUE))) {lead <- "Block:  "}
     if (any(grep(fpat,n,perl = TRUE))) {lead <- ""}
-    title <- runOPM:::.WGN_KW2Title(wgn = n, keyword = k)
+    title <- .WGN_KW2Title(wgn = n, keyword = k)
      ggp <- ggplot2::ggplot(data = plotdf,
                            ggplot2::aes(x = DATE, y = VALUE, color = CASENAME,
                                         order = as.numeric(CASENAME)))
@@ -77,7 +78,7 @@ PlotEach <- function(longdata,
                                   ))
      ggp <- ggp + ggplot2::labs(
       title = title,
-      y = runOPM:::.KW2Label(plot.vars.df$KEYWORD[i])
+      y = .KW2Label(plot.vars.df$KEYWORD[i])
     )
     ggp <- ggp + ggplot2::theme_bw()
     ggp <- ggp + ggplot2::theme(
@@ -143,11 +144,49 @@ PlotEach <- function(longdata,
   return(all.plots.df)
 }
 #------------------------------------------------------------------------------
-# I don't remember what this was supposed to be for
-.BuildPlotFIlter <- function(longdata,
-                             casenames = casenames, wgnames = wgnames,
-                             keywords = keywords){
-  plot.filter <- 1
-  return(plot.filter)
+.BuildPLotFIlter <- function(longdata,
+                             casenames = NULL,
+                             wgnames = NULL,
+                             keywords = NULL,
+                             vars.long.df = NULL){
+  df <- vars.long.df[0,]
+  # filter down to selected cases
+  if (!is.null(casenames)) {
+    for (i in 1:length(casenames)) {
+      filt <- vars.long.df$CASENAME == casenames[i]
+      df <- rbind(df, vars.long.df[filt,])
+    }
+    vars.long.df <- df
+  }
+  # filter down again to selected wells
+  if (!is.null(wgnames)) {
+    for (i in 1:length(wgnames)) {
+      filt <- vars.long.df$WGNAME == wgnames[i]
+      df <- rbind(df, vars.long.df[filt,])
+    }
+    vars.long.df <- df
+  }
+  # filter down again to selected parameters
+  if (!is.null(keywords)) {
+    for (i in 1:length(keywords)) {
+      filt <- vars.long.df$KEYWORD == keywords[i]
+      df <- rbind(df, vars.long.df[filt,])
+    }
+    vars.long.df <- df
+  }
+  return(vars.long.df)
+}
+#------------------------------------------------------------------------------
+.UniqueVars <- function(longdata){
+  vl <- unique(paste(longdata$CASENAME,
+                     longdata$WGNAME,
+                     longdata$KEYWORD,sep = ":"))
+  vars.long.df <- as.data.frame(t(as.data.frame(strsplit(vl,":"))),
+                                stringsAsFactors = FALSE)
+  rownames(vars.long.df) <- NULL
+  rownames(vars.long.df) <- rownames(vars.long.df, do.NULL = FALSE,
+                                     prefix = "")
+  colnames(vars.long.df) <- c("CASENAME","WGNAME","KEYWORD")
+  return(vars.long.df)
 }
 #------------------------------------------------------------------------------

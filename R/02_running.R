@@ -30,19 +30,27 @@ RunFlow <- function(decknames,
                     queue = "background",
                     overwrite = NULL,
                     wait= FALSE){
+  # first establish executable
+  exec_path = "/usr/bin/"
+  if (sim_version == "latest") {exec_path <- "/usr/local/bin/"}
+  exec <- paste0(exec_path, sim_exec)
+  if (!file.exists(exec)) {stop("Failed to locate the desired executable.")}
+  # second iterate through decks to be run
   for (deckname in decknames) {
+    # if you can't find the deck, look in the DECKS directory
     if (!file.exists(deckname)) {
       deckname <- file.path(basedir,"DECKS",deckname)
       if (!file.exists(deckname)) {
-        stop(paste0("Failed to find simulation deck ", deckname))
+        warning(paste0("Failed to find simulation deck ", deckname))
+        next()
       }
     }
     # If the directory structure doesn't exist, this will create it and copy in
     # the deck
     ok <- TRUE
     if (!dir.exists(file.path(basedir, "OUTPUT")) ||
-       !dir.exists(file.path(basedir, "DECKS")) ||
-       !dir.exists(file.path(basedir, "REPORTS"))) {
+        !dir.exists(file.path(basedir, "DECKS")) ||
+        !dir.exists(file.path(basedir, "REPORTS"))) {
       ok <- MakeProj(deckname, basedir)
       if (!ok) {stop("Failed to create directory structure")}
     }
@@ -57,15 +65,11 @@ RunFlow <- function(decknames,
     casename <- sub("[.][^.]*$", "", casename, perl = TRUE)
     output_dir <- file.path(basedir, "OUTPUT", casename)
     if (!is.null(restartcase)) {output_dir <- file.path(basedir, "OUTPUT",
-                                                      restartcase)}
+                                                        restartcase)}
     if (!dir.exists(output_dir)) {
       ok <- dir.create(output_dir, showWarnings = FALSE)
       if (!ok) {stop("Failed to create output directory.")}
     }
-    exec_path = "/usr/bin/"
-    if (sim_version == "latest") {exec_path <- "/usr/local/bin/"}
-    exec <- paste0(exec_path, sim_exec)
-    if (!file.exists(exec)) {stop("Failed to locate the desired executable.")}
 
     # get the timestamp of the deck and unsmry files for overwrite testing
     deckts <- file.mtime(todeck)
@@ -74,6 +78,7 @@ RunFlow <- function(decknames,
     tosmry <- suppressWarnings(.FindSummary(basedir = output_dir,
                                             casename = casename,
                                             recursive = FALSE))
+    # if there is more than one summary, pick the latests one
     if (length(tosmry > 1)) {
       tsold <- 0
       fnold <- ""
@@ -86,14 +91,18 @@ RunFlow <- function(decknames,
       } # end for
       tosmry <- fnold
     } # end tosmry > 1
+    # if there is a summary file, get the timestamp
     smryts <- 0
     if (length(tosmry) > 0) {
       smryts <- file.mtime(tosmry)
     }
+    # if the case has been run before, get the output file names
     casepattern <- paste0(casename,"\\..+")
     old <- list.files(path = output_dir,
                       pattern = casepattern,
                       full.names = TRUE)
+    # If overwrite is null, but the deck is newer thatn the summary,
+    # dump the old files so they will be rerun
     if (is.null(overwrite)) {
       if (deckts > smryts) {
         file.remove(old)
