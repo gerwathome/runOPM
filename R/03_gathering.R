@@ -7,6 +7,7 @@
 #' @references \href{http://ert.nr.no/ert/index.php/Main_Page}{Ensemble Reservoir Tool}, \href{https://github.com/Statoil/libecl}{libecl}
 #' @export
 #------------------------------------------------------------------------------
+# this is slow; consider how to speed it up
 EclSum <- function(casename = "^.+", basedir = "tmp"){
   basedir <- .CheckBasedir(basedir)
   sumfiles <- .FindSummary(basedir = basedir, casename = casename)
@@ -20,7 +21,7 @@ EclSum <- function(casename = "^.+", basedir = "tmp"){
     for (infile in sumfiles) {
       case <- basename(infile)
       case <- sub("[.][^.]*$", "", case, perl = TRUE)
-      outfile <- file.path(basedir, "OUTPUT", case, paste0(case,".csv"))
+      outfile <- file.path(basedir, "OUTPUT", case, paste0(case,"_alt.csv"))
       wide_raw <- .GetECL(case, infile, outfile)
       if (is.data.frame(wide_raw)) {
          wide <- .CleanWide(case, wide_raw)
@@ -42,14 +43,15 @@ EclSum <- function(casename = "^.+", basedir = "tmp"){
 # keep all of the python in one function, for later removal (I hope)
 .GetECL <- function(case, infile, outfile){
   rPython::python.exec("import sys")
-  rPython::python.exec("import ert.ecl.ecl as ecl")
+  rPython::python.exec("import ecl.ecl as ecl")
+#  rPython::python.exec("import ert.ecl.ecl as ecl")
   rPython::python.assign("case",case)
   rPython::python.assign("infile",infile)
   rPython::python.assign("outfile",outfile)
   # the python structure is too complex to read in directly with RJSONIO
   try_err <- try(rPython::python.exec("sum_data = ecl.EclSum(infile)"),
                  silent = TRUE)
-  # Using ; as a seperator is important here, as some of the keys have
+  # Using ; as a separator is important here, as some of the keys have
   #  commas in them
   if (is.null(try_err)) {
     rPython::python.exec("sum_data.exportCSV(outfile,date_format = '%d-%b-%Y',sep = ';')")
@@ -210,7 +212,8 @@ EclSum <- function(casename = "^.+", basedir = "tmp"){
 }
 #------------------------------------------------------------------------------
 # functionality to check deck for units type needs to be tested
-# still nned to see what the Metric units are
+# still need to see what the Metric units are
+# also need to add many other keywords
 .KW2Units <- function(keyword, type = "FIELD", deck = NULL){
   if (!is.null(deck)) {type <- .FindUnitType(deck)}
   unitsF <- switch(keyword,
@@ -231,6 +234,7 @@ EclSum <- function(casename = "^.+", basedir = "tmp"){
                    "WBHP" = "PSIA",      # Bottom Hole Pressure
                    "WBDP" = "PSIA",      # well bore pressure drop
                    "BPR" = "PSIA",       # block pressure
+                   "BWSAT" = "FRAC",     # block water saturation
                    ""
   )
   unitsM <- switch(keyword,
@@ -251,6 +255,7 @@ EclSum <- function(casename = "^.+", basedir = "tmp"){
                    "WBHP" = "PSIA",      # Bottom Hole Pressure
                    "WBDP" = "PSIA",      # well bore pressure drop
                    "BPR" = "PSIA",       # block pressure
+                   "BWSAT" = "FRAC",     # block water saturation
                    ""
   )
   units <- ifelse(type == "FIELD", unitsF, unitsM)
@@ -287,6 +292,7 @@ EclSum <- function(casename = "^.+", basedir = "tmp"){
                     "WBHP" = "Bottom Hole Pressure",
                     "WBDP" = "Well Bore Pressure Drop",
                     "BPR"  = "Block Pressure",
+                    "BWSAT"  = "Block Water Saturation",
                     "Unknown Parameter"
   )
   return(descrip)
@@ -326,7 +332,7 @@ EclSum <- function(casename = "^.+", basedir = "tmp"){
 .LongColSpec <- function(){
   colspec <- readr::cols(
     CASENAME = readr::col_character(),
-    DAYS = readr::col_integer(),
+    DAYS = readr::col_double(),
     DATE = readr::col_date(format = ""),
     WGNAME = readr::col_character(),
     KEYWORD = readr::col_character(),

@@ -57,7 +57,7 @@ ReadTemplate <- function(template = NULL, basedir = "tmp"){
   ),
   # Available parameter types: distType, truncLow, truncHigh, mean, stddev,
   #                            alpha, beta, discrete, default
-  varsLong  = runOPM:::.HmvarsVarsLongDefinition(nvars),
+  varsLong = .HmvarsVarsLongDefinition(nvars),
   expDesignCoded = data.frame(),
   expDesignUncoded = data.frame(),
   template_name = objname
@@ -70,7 +70,7 @@ ReadTemplate <- function(template = NULL, basedir = "tmp"){
   hmvars$varsLong$name <- varnames
   hmvars$varsLong$paramName <- rep("distType", nvars)
   hmvars$varsLong$paramValue <- rep("unif", nvars)
-  tmp  <- runOPM:::.HmvarsVarsLongDefinition(nvars)
+  tmp  <- .HmvarsVarsLongDefinition(nvars)
   tmp$name <- varnames
   tmp$paramName <- rep("default", nvars)
 #  tmp$paramValue <- rep(list(NULL), nvars)
@@ -166,15 +166,27 @@ EditVar <- function(obj = NULL, pattern = NULL, basedir = "tmp",
                       ignore.case = TRUE,
                       perl = TRUE)
   passedparams <- passedparams[!filtParams]
+  upp <- unlist(passedparams)
   ppnames <- ppnames[!filtParams]
   varnames <- unique(obj$varsLong$name)
   filtNames <- grepl(pattern,
                      x = varnames,
                      perl = TRUE)
   varnames <- varnames[filtNames]
-  namesParams <- expand.grid(varnames, ppnames, stringsAsFactors = FALSE)
-  colnames(namesParams) <- c("name", "paramName")
-  print(namesParams)
+  nvars <- length(varnames) * length(ppnames)
+  varsLongEdit <- .HmvarsVarsLongDefinition(nvars)
+  varsLongEdit[,1:2] <- expand.grid(varnames, ppnames,
+                                    stringsAsFactors = FALSE)
+  ppval <- function(paramName, upp){
+    filt <- grep(paramName, names(upp))
+    upp[filt]
+  }
+    varsLongEdit[,3] <- mapply(ppval, varsLongEdit[,2],
+                             MoreArgs = list(upp = upp))
+  keyObj <- paste0(obj$varsLong$name, obj$varsLong$paramName)
+  keyEdit <- paste0(varsLongEdit$name, varsLongEdit$paramName)
+  inBoth <- keyObj %in% keyEdit
+  obj$varsLong <- rbind(obj$varsLong[!inBoth,], varsLongEdit)
   # save the edited object
   basedir <- .CheckBasedir(basedir)
   decksdir <- file.path(basedir,"DECKS")
@@ -193,7 +205,7 @@ EditVar <- function(obj = NULL, pattern = NULL, basedir = "tmp",
 #'   \item \emph{augfpb} {Folded Plackett-Burman augmented with  a latin hypercube spacefilling design. This is the default. (lhs::optAugmentLHS)}
 #'   \item \emph{lhs} {A latin hypercube spacefilling design. (lhs::improvedLHS)}
 #' }
-#' @param ncases The desired number of cases to be run.    This value only constrains the spacefilling portion of the design.
+#' @param ncases The desired number of cases to be run.   This value only constrains the spacefilling portion of the design.
 #' @param basedir The path to the base directory of a simulation project.  The default is a subdirectory of the current directory called "tmp".  This is used to store the edited object.
 #' @param ... Arguments passed to the underlying experimental design functions.
 #' @param objname This is used to save the edited object to a file. It defaults to the name of the hmvars object.
@@ -238,7 +250,12 @@ ExpDes <- function(obj=NULL, edtype = "augfpb", ncases = NULL, basedir = "tmp",
   }
   low.values <- obj$vars$truncLow
   high.values <- obj$vars$truncHigh
-  desVarsFilt <- obj$vars$truncLow < obj$vars$truncHigh
+  long_vars <- TRUE
+  if (long_vars) {
+    low <- obj$varsLong$paramName == "truncLow"
+
+  }
+  desVarsFilt <- low.values < high.values
   if (sum(desVarsFilt) == 0) {
     stop(paste0("If truncLow >= truncHigh, the variable is made inactive.  If",
                 " there are no active variables, no experimental design is",
@@ -249,6 +266,12 @@ ExpDes <- function(obj=NULL, edtype = "augfpb", ncases = NULL, basedir = "tmp",
   nvars <- length(factor.names)
   design.factor.names <- obj$designVars$name
   ndesvars <- length(design.factor.names)
+  constant.factor.names <- setdiff(factor.names, design.factor.names)
+  nconst <- length(constant.factor.names)
+  const.values.uncoded <-
+    obj$vars$truncHigh[match(constant.factor.names, factor.names)]
+  names(const.values.uncoded) <- constant.factor.names
+  const.values.coded <- .Uncoded2Coded(const.values.uncoded, 0, 1)
   if (is.null(ncases)) {
     ncases <- 10 * ndesvars
   }
@@ -258,18 +281,28 @@ ExpDes <- function(obj=NULL, edtype = "augfpb", ncases = NULL, basedir = "tmp",
   # create a pb design
   if (edtype == "pb" | edtype == "fpb" | edtype == "augfpb") {
     # for some reason, nruns=4 fails for pb
+    # This needs to be fixed, probably manually with an if then statement
     nruns <- ceiling((length(design.factor.names) + 1 ) / 4) * 4
     nruns <- max(nruns, 8)
     pbtext <- paste0("FrF2::pb(nruns = nruns,",
                      " nfactors = length(design.factor.names),",
                      " factor.names = design.factor.names)")
-    pbed <- eval(parse(text = pbtext))
+    pbed <- suppressMessages(suppressWarnings(eval(parse(text = pbtext))))
+    # This is so that fpbed has a value if it doesn't make it through the
+    # following if statement
+    fpbed <- pbed
   }
   # create fpb design from the previously created pb design
-  if (edtype == "fpb" | edtype == "augfpb") {
+  # FrF2::pb fails with nruns = 4
+  # FrF2::pb actually creates a full factorial design that may not be folded if
+  #   nruns = 8 and nfactors < 4
+  if ((edtype == "fpb" | edtype == "augfpb") &
+      attr(pbed,"design.info")$type != "full factorial") {
     foldtext <- "FrF2::fold.design(pbed)"
     # design values are factors, with added descriptive columns
     fpbed <- eval(parse(text = foldtext))
+  }
+  if (edtype == "fpb" | edtype == "augfpb") {
     fpbnames <- colnames(fpbed)
     # this converts the design from factors to values, but changes the names
     fpbed <- DoE.base::desnum(fpbed)
@@ -305,28 +338,35 @@ ExpDes <- function(obj=NULL, edtype = "augfpb", ncases = NULL, basedir = "tmp",
     tempED <- lhs
   }
   nr <- nrow(tempED)
-  obj$expDesignCoded <- matrix(data = rep(0, nr * nvars),
-                               nrow = nr, ncol = nvars)
-  colnames(obj$expDesignCoded) <- factor.names
-  obj$expDesignCoded[,design.factor.names] <- tempED
+  nc <- ncol(tempED)
+  if (nc != ndesvars) {stop("Mismatch between design variables and",
+                            " experimental design")}
+  nc <- ncol(tempED) + nconst
+  constED <- matrix(data = rep(const.values.coded, nr),
+                    nrow = nr, ncol = nconst)
+  colnames(constED) <- constant.factor.names
+  # obj$expDesignCoded <- matrix(data = rep(0, nr * nc),
+  #                              nrow = nr, ncol = nc)
+  # colnames(obj$expDesignCoded) <- c(design.factor.names, constant.factor.names)
+  obj$expDesignCoded <- cbind(tempED, constED)
 
   rownames(obj$expDesignCoded) <- NULL
   # copy from coded to uncoded for dimensions and column names
   obj$expDesignUncoded <- obj$expDesignCoded
   # calculate the uncoded values
-  for (var in obj$vars$name) {
+  for (varname in obj$vars$name) {
     # this is vectorized, and should work without inner loop
-    c <- obj$expDesignCoded[,var]
-    lu <- obj$vars$truncLow[obj$vars$name == var]
-    hu <- obj$vars$truncHigh[obj$vars$name == var]
-    obj$expDesignUncoded[,var] <- .Coded2Uncoded(c, lu, hu)
+    cd <- obj$expDesignCoded[, varname]
+    lu <- obj$vars$truncLow[obj$vars$name == varname]
+    hu <- obj$vars$truncHigh[obj$vars$name == varname]
+    obj$expDesignUncoded[,varname] <- .Coded2Uncoded(cd, lu, hu)
     # for (i in 1:length(obj$expDesignCoded[,1])) {
-    #   c <- obj$expDesignCoded[i,var]
-    #   lu <- obj$vars$truncLow[obj$vars$name == var]
-    #   hu <- obj$vars$truncHigh[obj$vars$name == var]
-    #   obj$expDesignUncoded[i,var] <- .Coded2Uncoded(c, lu, hu)
+    #   cd <- obj$expDesignCoded[i,varname]
+    #   lu <- obj$vars$truncLow[obj$vars$name == varname]
+    #   hu <- obj$vars$truncHigh[obj$vars$name == varname]
+    #   obj$expDesignUncoded[i,varname] <- .Coded2Uncoded(cd, lu, hu)
     # } # end for i
-  } # end for var
+  } # end for varname
   rownames(obj$expDesignUncoded) <- NULL
   basedir <- .CheckBasedir(basedir)
   decksdir <- file.path(basedir,"DECKS")
@@ -403,31 +443,36 @@ AugExpDes <- function(obj=NULL, edtype = "aug", ncases = 10, basedir = "tmp",
   ndesvars <- length(design.factor.names)
 
   if (edtype == "aug") {
-    orig_des <- obj$expDesignCoded[, design.factor.names]
+    orig_des <- obj$expDesignCoded
     if (is.null(ncases)) {ncases <- 10}
     if (ncases < 1) {ncases <- 10}
     # convert from (-1, 1) to (0, 1)
-    orig_des_01 <- .Coded2Uncoded(orig_des, 0, 1)
-    new_des_01 <- lhs::optAugmentLHS(orig_des_01, m = as.integer(ncases),
+    orig_des_uc <- .Coded2Uncoded(orig_des, 0, 1)
+    new_des_uc <- lhs::optAugmentLHS(orig_des_uc, m = as.integer(ncases),
                                      mult = 5)
-    new_des <- .Uncoded2Coded(new_des_01, 0, 1)
-    obj$expDesignCoded[, design.factor.names] <- new_des
+    new_des <- .Uncoded2Coded(new_des_uc, 0, 1)
+    # newrow <- length(orig_des[,1]) + 1
+    # lastrow <- length(new_des[,1])
+    # aug_new_des <- new_des[newrow:lastrow,]
+    # obj$expDesignCoded[, design.factor.names] <-
+    #   rbind(obj$expDesignCoded[, design.factor.names], aug_new_des)
+    obj$expDesignCoded <- new_des
     # copy from coded to uncoded for dimensions and column names
     obj$expDesignUncoded <- obj$expDesignCoded
     # calculate the uncoded values
-    for (var in obj$vars$name) {
+    for (varname in obj$vars$name) {
       # this is vectorized, and should work without inner loop
-      c <- obj$expDesignCoded[,var]
-      lu <- obj$vars$truncLow[obj$vars$name == var]
-      hu <- obj$vars$truncHigh[obj$vars$name == var]
-      obj$expDesignUncoded[,var] <- .Coded2Uncoded(c, lu, hu)
+      cd <- obj$expDesignCoded[, varname]
+      lu <- obj$vars$truncLow[obj$vars$name == varname]
+      hu <- obj$vars$truncHigh[obj$vars$name == varname]
+      obj$expDesignUncoded[,varname] <- .Coded2Uncoded(cd, lu, hu)
       # for (i in 1:length(obj$expDesignCoded[,1])) {
-      #   c <- obj$expDesignCoded[i,var]
-      #   lu <- obj$vars$truncLow[obj$vars$name == var]
-      #   hu <- obj$vars$truncHigh[obj$vars$name == var]
-      #   obj$expDesignUncoded[i,var] <- .Coded2Uncoded(c, lu, hu)
+      #   cd <- obj$expDesignCoded[i,varname]
+      #   lu <- obj$vars$truncLow[obj$vars$name == varname]
+      #   hu <- obj$vars$truncHigh[obj$vars$name == varname]
+      #   obj$expDesignUncoded[i,varname] <- .Coded2Uncoded(cd, lu, hu)
       # } # end for i
-    } # end for var
+    } # end for varname
     rownames(obj$expDesignCoded) <- NULL
     rownames(obj$expDesignUncoded) <- NULL
     saveRDS(obj, file = rdsfn)
@@ -453,21 +498,21 @@ AugExpDes <- function(obj=NULL, edtype = "aug", ncases = 10, basedir = "tmp",
     if (coded == TRUE) {
       obj$expDesignCoded <- rbind(obj$expDesignCoded, new_design)
       obj$expDesignUncoded <- obj$expDesignCoded
-      for (var in obj$vars$name) {
-        c <- obj$expDesignCoded[,var]
-        lu <- obj$vars$truncLow[obj$vars$name == var]
-        hu <- obj$vars$truncHigh[obj$vars$name == var]
-        obj$expDesignUncoded[,var] <- .Coded2Uncoded(c, lu, hu)
-      } # end for var
+      for (varname in obj$vars$name) {
+        cd <- obj$expDesignCoded[, varname]
+        lu <- obj$vars$truncLow[obj$vars$name == varname]
+        hu <- obj$vars$truncHigh[obj$vars$name == varname]
+        obj$expDesignUncoded[,varname] <- .Coded2Uncoded(cd, lu, hu)
+      } # end for varname
     } else {
       obj$expDesignUncoded <- rbind(obj$expDesignUncoded, new_design)
       obj$expDesignCoded <- obj$expDesignUncoded
-      for (var in obj$vars$name) {
-        u <- obj$expDesignUncoded[,var]
-        lu <- obj$vars$truncLow[obj$vars$name == var]
-        hu <- obj$vars$truncHigh[obj$vars$name == var]
-        obj$expDesignCoded[,var] <- .Uncoded2Coded(c, lu, hu)
-      } # end for var
+      for (varname in obj$vars$name) {
+        uc <- obj$expDesignUncoded[,varname]
+        lu <- obj$vars$truncLow[obj$vars$name == varname]
+        hu <- obj$vars$truncHigh[obj$vars$name == varname]
+        obj$expDesignCoded[, varname] <- .Uncoded2Coded(uc, lu, hu)
+      } # end for varname
     }
   }
   rownames(obj$expDesignCoded) <- NULL
@@ -530,8 +575,13 @@ BuildDecks <- function(obj, template, basedir = "tmp", overwrite = FALSE,
   ed <- obj$expDesignUncoded
   ednames <- sort(colnames(ed))
   if (!identical(dtnames, ednames)) {
+    dtn <- paste(dtnames, collapse = ', ')
+    edn <- paste(ednames, collapse = ', ')
     stop(paste0("The variables in the template deck do not agree",
-                " with those in the experimental design."))
+                " with those in the experimental design.",
+                "  Template names:  ", dtn,
+                "  Exp Des names:  ", edn
+                ))
   }
   ncases <- length(ed[,1])
   width <- max(nchar(as.character(ncases)) + 1, 4)
@@ -598,18 +648,16 @@ BuildDecks <- function(obj, template, basedir = "tmp", overwrite = FALSE,
   if (any(lc >= hc)) {stop(paste("The low coded value must be less than the",
                                  "high coded value"))}
   denom <- hu - lu
-  if (denom == 0) {
-    m <- 0
-    b <- 0
-  } else {
-    m <- (hc - lc) / denom
-    b <- lc - m * lu
-  }
+  zeroDenom <- denom == 0
+  m <- (hc - lc) / denom
+  b <- lc - m * lu
+  m[zeroDenom] <- 0
+  b[zeroDenom] <- 0
   coded <- m * uncoded + b
   return(coded)
 }
 #==============================================================================
-.CheckBasedir <- function(basedir){
+.CheckBasedir <- function(basedir, deckname = NULL){
   if (is.null(basedir)) {basedir <- "tmp"}
   # If the directory structure doesn't exist, this will create it
   ok <- TRUE
@@ -617,7 +665,7 @@ BuildDecks <- function(obj, template, basedir = "tmp", overwrite = FALSE,
       !dir.exists(file.path(basedir, "OUTPUT")) ||
       !dir.exists(file.path(basedir, "DECKS")) ||
       !dir.exists(file.path(basedir, "REPORTS"))) {
-    ok <- suppressWarnings(MakeProj(deckname = NULL, basedir = basedir))
+    ok <- suppressWarnings(MakeProj(deckname = deckname, basedir = basedir))
   }
   if (!ok) {stop("Failed to create directory structure")}
   basedir <- normalizePath(basedir)

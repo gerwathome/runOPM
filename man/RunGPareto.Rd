@@ -4,7 +4,8 @@
 \alias{RunGPareto}
 \title{Sequential multi-objective Expected Improvement Optimization}
 \usage{
-RunGPareto(kmodels = NULL, method = "genoud", basedir = "tmp", ...)
+RunGPareto(kmodels = NULL, method = "genoud", basedir = "tmp",
+  nsteps = 10, ...)
 }
 \arguments{
 \item{kmodels}{A list of kriged models of class km.  There should one model for each of the objectives that are to be included in the multi-objective optimization.}
@@ -12,6 +13,8 @@ RunGPareto(kmodels = NULL, method = "genoud", basedir = "tmp", ...)
 \item{method}{The chosen optimization method.  Currently only genoud is supported.  Note that by default genoud seeks a maximum.  For a kriged model of error, Max = FALSE is necessary, which is assumed in this wrapper.}
 
 \item{basedir}{The path to the base directory of a simulation project.  The default is a subdirectory of the current directory called "tmp".  This is necessary for saving the results.}
+
+\item{nsteps}{an integer representing the desired number of iterations.}
 
 \item{...}{Additional arguments which may be passed to GParetoptim}
 }
@@ -23,7 +26,7 @@ nsteps: an integer representing the desired number of iterations (given in argum
 lastmodel: a list of objects of class km corresponding to the last kriging models fitted. If a problem occurs during either model updates or criterion maximization, the last working model and corresponding values are returned.
 }
 \description{
-This is a wrapper for GPareto::GParetoptim.  It assumes input of a list of kriged models of error for the chosen well/group name and keyword combination.
+This is a wrapper for GPareto::GParetoptim.  It assumes input of a list of kriged models of error for the chosen well/group name and keyword combination.  The GPareto vignette is very useful for understanding how to use this function: \href{https://cran.r-project.org/web/packages/GPareto/vignettes/GPareto_vignette.pdf}{GPareto: An R Package for Gaussian-Process Based Multi-Objective Optimization and Analysis}
 }
 \details{
 blah

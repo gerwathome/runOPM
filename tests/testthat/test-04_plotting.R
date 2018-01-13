@@ -11,11 +11,11 @@ test_that("plotting helpers work", {
                                             keywords), "spv.rds")
   expect_equal_to_reference(.FilterLong(long, readRDS("spv.rds")), "fl.rds")
   expect_equal_to_reference(.UniqueVars(long), "unique.rds")
-  expect_equal_to_reference(.BuildPLotFIlter(long,
+  expect_equal_to_reference(.BuildPlotFIlter(long,
                                              wgnames = c("PROD", "INJ"),
                                              vars.long.df = .UniqueVars(long)),
                             "filt_wgn.rds")
-  expect_equal_to_reference(.BuildPLotFIlter(long,
+  expect_equal_to_reference(.BuildPlotFIlter(long,
                                              keywords = c("WOPR", "WGIR"),
                                              vars.long.df = .UniqueVars(long)),
                              "filt_kw.rds")

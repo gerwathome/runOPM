@@ -18,7 +18,7 @@ ExpDes(obj = NULL, edtype = "augfpb", ncases = NULL, basedir = "tmp",
   \item \emph{lhs} {A latin hypercube spacefilling design. (lhs::improvedLHS)}
 }}
 
-\item{ncases}{The desired number of cases to be run.    This value only constrains the spacefilling portion of the design.}
+\item{ncases}{The desired number of cases to be run.   This value only constrains the spacefilling portion of the design.}
 
 \item{basedir}{The path to the base directory of a simulation project.  The default is a subdirectory of the current directory called "tmp".  This is used to store the edited object.}
 

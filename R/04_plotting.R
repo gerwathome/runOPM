@@ -17,7 +17,9 @@ PlotEach <- function(longdata,
                      ncolumns = 3){
   # all of the combinations of case, well and parameter with data
   allnames <- casenames
+  if (is.null(allnames)) {allnames <- unique(longdata$CASENAME)}
   if (!is.null(basecase)) {allnames <- c(casenames, basecase)}
+  allnames <- unique(allnames)
   vars.long.df <- .SelectPlotVars(longdata, casenames = allnames,
                                   wgnames = wgnames, keywords = keywords)
   all.plots.df <- .FilterLong(longdata, vars.long.df)
@@ -37,17 +39,24 @@ PlotEach <- function(longdata,
     plotdf <- all.plots.df[filt,]
     plotdf$CASENAME <- factor(plotdf$CASENAME, levels = unique(plotdf$CASENAME))
     rownums <- match(unique(plotdf$CASENAME), plotdf$CASENAME)
-    plotdf <- dplyr::mutate(plotdf, linetype = "solid", symbol = 20)
+#    plotdf <- dplyr::mutate(plotdf, linetype = "solid", symbol = 20)
+    plotdf <- dplyr::mutate(plotdf, linetype = 1, symbol = 20)
     # 20 is a small filled circle
-    plotdf$linetype[plotdf$CASENAME == basecase] <- "blank"
-    plotdf$symbol[!plotdf$CASENAME == basecase] <- 46
+#    plotdf$linetype[plotdf$CASENAME == basecase] <- "blank"
+    no.bc.df <- plotdf
+    bc.only.df <- plotdf
+    if (!is.null(basecase)) {
+      plotdf$linetype[plotdf$CASENAME == basecase] <- 0
+      plotdf$symbol[!plotdf$CASENAME == basecase] <- 46
+      bc.only.df <- plotdf[plotdf$CASENAME == basecase,]
+      no.bc.df <- plotdf[!plotdf$CASENAME == basecase,]
+    }
     #  46 is a dot (invisible under a line)
     lns_pts <- data.frame(CASENAME = plotdf$CASENAME[rownums],
                               linetype = plotdf$linetype[rownums],
                               symbol = plotdf$symbol[rownums],
                               row.names = plotdf$CASENAME[rownums],
                               stringsAsFactors = FALSE)
-#    man.cols <- iwanthue(nrow(lns_pts))
     man.cols <- pals::glasbey(nrow(lns_pts))
 #    pals::pal.bands(man.cols)
     n <- plot.vars.df$WGNAME[i]
@@ -60,15 +69,18 @@ PlotEach <- function(longdata,
         any(grep(b2pat,n,perl = TRUE))) {lead <- "Block:  "}
     if (any(grep(fpat,n,perl = TRUE))) {lead <- ""}
     title <- .WGN_KW2Title(wgn = n, keyword = k)
-     ggp <- ggplot2::ggplot(data = plotdf,
+    ggp <- ggplot2::ggplot(data = plotdf,
                            ggplot2::aes(x = DATE, y = VALUE, color = CASENAME,
                                         order = as.numeric(CASENAME)))
     ggp <- ggp +
-      ggplot2::geom_line(data = plotdf[!plotdf$CASENAME == basecase,],
+      ggplot2::geom_line(data = no.bc.df,
                          ggplot2::aes(x = DATE, y = VALUE, color = CASENAME))
-    ggp <- ggp +
-      ggplot2::geom_point(data = plotdf[plotdf$CASENAME == basecase,],
-                          ggplot2::aes(x = DATE, y = VALUE, color = CASENAME))
+    if (!is.null(basecase)) {
+      ggp <- ggp +
+        ggplot2::geom_point(data = bc.only.df,
+                            ggplot2::aes(x = DATE, y = VALUE,
+                                         color = CASENAME))
+    }
     ggp <- ggp +
       ggplot2::scale_color_manual(breaks = lns_pts$CASENAME,
                                   values = man.cols,
@@ -76,7 +88,7 @@ PlotEach <- function(longdata,
                                     override.aes = list(shape = lns_pts$symbol,
                                                         linetype = lns_pts$linetype)
                                   ))
-     ggp <- ggp + ggplot2::labs(
+    ggp <- ggp + ggplot2::labs(
       title = title,
       y = .KW2Label(plot.vars.df$KEYWORD[i])
     )
@@ -144,7 +156,7 @@ PlotEach <- function(longdata,
   return(all.plots.df)
 }
 #------------------------------------------------------------------------------
-.BuildPLotFIlter <- function(longdata,
+.BuildPlotFIlter <- function(longdata,
                              casenames = NULL,
                              wgnames = NULL,
                              keywords = NULL,

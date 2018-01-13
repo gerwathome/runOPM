@@ -7,7 +7,7 @@
 CalcErrors(long = NULL, basecase = NULL, basedir = "tmp")
 }
 \arguments{
-\item{long}{A long format data frame with historical data and the simulation results.}
+\item{long}{A long format data frame with historical data and the simulation results, populated by the ImportHist and the EclSum functions.}
 
 \item{basecase}{The case against which all others will be compared.}
 

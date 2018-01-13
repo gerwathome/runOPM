@@ -18,6 +18,7 @@ ok <- file.copy(from.perm.inc.path, file.path(griddir, "PERMVALUES.INC"),
           overwrite = TRUE)
 ok <- file.copy(from.grdecl.path, file.path(griddir, "SPE9.GRDECL"),
                 overwrite = TRUE)
+#spe9vars <- ReadTemplate(from.template.path, "spe9hm")
 spe9vars <- ReadTemplate(from.template.path, "spe9hm")
 #------------------------------------------------------------------------------
 test_that("ReadTemplate works", {
@@ -43,7 +44,8 @@ spe9vars <- EditVar(spe9vars, pattern = "PERM", truncLow = 1,
                     basedir = basedir)
 spe9vars <- EditVar(spe9vars, pattern = "PERMX_0[123]", truncLow = 0.1,
                     truncHigh = 1.5, param1 = 0.1, param2 = 2.0,
-                    basedir = basedir)#------------------------------------------------------------------------------
+                    basedir = basedir)
+#------------------------------------------------------------------------------
 test_that("EditVar works", {
   expect_s3_class(spe9vars, "hmvars")
   expect_equal_to_reference(spe9vars$vars, "spe9vars_vars.rds")
@@ -58,25 +60,26 @@ spe9vars <- ExpDes(spe9vars, edtype = "fpb", basedir = basedir)
 #------------------------------------------------------------------------------
 test_that("ExpDes works", {
   expect_equal_to_reference(spe9vars$expDesignCoded,
-                            "spe9vars_expdes_coded.rds")
+                            "spe9vars_expdes_coded_8.rds")
   expect_equal_to_reference(spe9vars$expDesignUncoded,
                             "spe9vars_expdes_uncoded.rds")
 })
 #==============================================================================
-fpb <- spe9vars$expDesignCoded
-ncases <- nrow(fpb)              #  64
-nvars <- ncol(fpb)               #  30
-totcases <- 10 * nvars           # 300
-newcases <- totcases - ncases    # 236
+ndesvars <- nrow(spe9vars$designVars)   #  3
+ncases <- nrow(spe9vars$expDesignCoded) #  8
+nvars <- ncol(spe9vars$expDesignCoded)  # 30
+totcases <- 10 * ndesvars               # 30
+newcases <- totcases - ncases           # 30 - 8 = 22
 spe9vars <- AugExpDes(spe9vars, ncases = newcases, basedir = basedir)
-design_lines <- nrow(spe9vars$expDesignCoded) # 300
+design_lines <- nrow(spe9vars$expDesignCoded) # 30
 #------------------------------------------------------------------------------
 test_that("AugExpDes works", {
-  expect_equal(ncases, 64)
+  expect_equal(ncases, 8)
+  expect_equal(ndesvars, 3)
   expect_equal(nvars, 30)
-  expect_equal(totcases, 300)
-  expect_equal(newcases, 236)
-  expect_equal(design_lines, 300)
+  expect_equal(totcases, 30)
+  expect_equal(newcases, 22)
+  expect_equal(design_lines, 30)
   expect_equal_to_reference(spe9vars$expDesignCoded,
                             "spe9vars_augdes_coded.rds")
   expect_equal_to_reference(spe9vars$expDesignUncoded,
@@ -102,7 +105,7 @@ names(varvals) <- varnames
 testvals <- spe9vars$expDesignUncoded[7,varnames]
 #------------------------------------------------------------------------------
 test_that("BuildDecks works", {
-  expect_equal(ndecks, 300)
+  expect_equal(ndecks, 30)
   expect_identical(spe9decks,
                    list.files(deckdir, "SPE9_.+\\.DATA",
                               full.names = TRUE, include.dirs = TRUE))
@@ -145,3 +148,8 @@ test_that("coded / uncoded functions work", {
 # clean up
 unlink("spe9hm", recursive = TRUE)
 
+#==============================================================================
+# below here is tmp play area that must be deleted
+# setwd("/home/gerw/gitrepos/runOPM/tests/testthat")
+# test_spe9vars <- readRDS("spe9vars_vars.rds")
+# setwd("/home/gerw/gitrepos/runOPM")

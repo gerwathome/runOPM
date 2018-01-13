@@ -52,7 +52,7 @@ ImportHist <- function(ssheetfile = NULL, basedir = "tmp", format = "%d-%b-%Y"){
 #==============================================================================
 #' @title Calculate the differences between the base case and the simulation runs
 #' @description This calculates the difference between a base case and a simulation case, as well as the fractional difference.
-#' @param long A long format data frame with historical data and the simulation results.
+#' @param long A long format data frame with historical data and the simulation results, populated by the ImportHist and the EclSum functions.
 #' @param basecase The case against which all others will be compared.
 #' @param basedir The path to the base directory of a simulation project.  The default is a subdirectory of the current directory called "tmp".
 #' @details First it is necessary to define the timesteps at which errors are going to be estimated.   The default dates will be those of the base case, and all other case values will need to be available at those dates (or interpolated to those dates, eventually).
@@ -90,6 +90,8 @@ CalcErrors <- function(long = NULL, basecase = NULL, basedir = "tmp"){
   filt_value <- abs(long_tmp$VALUE - 0) < tolerance
   filt_base_value <- abs(long_tmp$BASE_VALUE - 0) < tolerance
   filt <- !filt_value & !filt_base_value
+  # or if both values don't exist
+  filt[is.na(filt)] <- FALSE
   long_tmp$ERR[filt] <- long_tmp$VALUE[filt] - long_tmp$BASE_VALUE[filt]
   long_tmp$FRAC_ERR[filt] <- long_tmp$ERR[filt] / long_tmp$BASE_VALUE[filt]
   col_filt <- !grepl("BASE_VALUE", colnames(long_tmp), fixed = TRUE)
@@ -201,7 +203,9 @@ ModelSensitivity <- function(hmvars = NULL, member_error = NULL,
   if (is.null(member_error)) {stop("A member_error object must be specified.")}
   if (is.null(model_selection)) {stop(paste0("A model_selection object must",
                                              " be specified."))}
-  design <- as.data.frame(hmvars$expDesignCoded)
+  designColFilt <- .List2Filt(hmvars$designVars$name,
+                              colnames(hmvars$expDesignCoded))
+  design <- as.data.frame(hmvars$expDesignCoded[,designColFilt])
   objname <- hmvars$template_name
   response <- .Long2WideError(member_error, model_selection)
   varsens <- multisensi::multisensi(design = design, model = response)
@@ -235,7 +239,8 @@ SobelSensitivity <- function(hmvars = NULL, member_error = NULL,
   design <- as.data.frame(hmvars$expDesignCoded)
   objname <- hmvars$template_name
   response <- .Long2WideError(member_error, model_selection)
-  varsens <- multisensi::multisensi(design = design, model = response)
+  varsens <- suppressWarnings(multisensi::multisensi(design = design,
+                                                     model = response))
   vs_path <- file.path(reportsdir, paste0(objname, "_varsens.rds"))
   saveRDS(object = varsens, file = vs_path)
   return(varsens)
@@ -332,6 +337,9 @@ SelectModels <- function(member_error = NULL, basedir = "tmp", wgnames = NULL,
 #' @return Returns a list of kriged models, one model for each of the elements selected in the model selection object
 #' @export
 #------------------------------------------------------------------------------
+# This function uses only the design variables for the current set of runs
+# If it is desirable to include all changing variables over multiple runs,
+# it will need to be modified.
 BuildKModels <- function(hmvars = NULL, member_error = NULL,
                          model_selection = NULL, basedir = "tmp"){
   basedir <- .CheckBasedir(basedir)
@@ -341,7 +349,9 @@ BuildKModels <- function(hmvars = NULL, member_error = NULL,
   if (is.null(hmvars)) {stop("An hmvars object must be specified.")}
   if (is.null(member_error)) {stop("A member_error object must be specified.")}
   if (is.null(model_selection)) {stop("A model_selection object must be specified.")}
-  design <- hmvars$expDesignCoded
+  designColFilt <- .List2Filt(hmvars$designVars$name,
+                              colnames(hmvars$expDesignCoded))
+  design <- hmvars$expDesignCoded[,designColFilt]
   objname <- hmvars$template_name
   kmfilt <- model_selection$kmfilt
   kmodels <- apply(kmfilt, 2, .Filt2KM, design = design,
@@ -352,10 +362,11 @@ BuildKModels <- function(hmvars = NULL, member_error = NULL,
 } # end function
 #==============================================================================
 #' @title Sequential multi-objective Expected Improvement Optimization
-#' @description This is a wrapper for GPareto::GParetoptim.  It assumes input of a list of kriged models of error for the chosen well/group name and keyword combination.
+#' @description This is a wrapper for GPareto::GParetoptim.  It assumes input of a list of kriged models of error for the chosen well/group name and keyword combination.  The GPareto vignette is very useful for understanding how to use this function: \href{https://cran.r-project.org/web/packages/GPareto/vignettes/GPareto_vignette.pdf}{GPareto: An R Package for Gaussian-Process Based Multi-Objective Optimization and Analysis}
 #' @param kmodels A list of kriged models of class km.  There should one model for each of the objectives that are to be included in the multi-objective optimization.
 #' @param method The chosen optimization method.  Currently only genoud is supported.  Note that by default genoud seeks a maximum.  For a kriged model of error, Max = FALSE is necessary, which is assumed in this wrapper.
 #' @param basedir The path to the base directory of a simulation project.  The default is a subdirectory of the current directory called "tmp".  This is necessary for saving the results.
+#' @param nsteps an integer representing the desired number of iterations.
 #' @param ... Additional arguments which may be passed to GParetoptim
 #' @details blah
 #' @return A list with components:
@@ -365,7 +376,7 @@ BuildKModels <- function(hmvars = NULL, member_error = NULL,
 #' lastmodel: a list of objects of class km corresponding to the last kriging models fitted. If a problem occurs during either model updates or criterion maximization, the last working model and corresponding values are returned.
 #' @export
 #------------------------------------------------------------------------------
-RunGPareto <- function(kmodels = NULL, method = "genoud", basedir = "tmp", ...){
+RunGPareto <- function(kmodels = NULL, method = "genoud", basedir = "tmp", nsteps = 10, ...){
   if (is.null(kmodels)) {stop("A list of kriged models must be supplied.")}
   nvars <- kmodels[[1]]@d
   ncases <- length(kmodels)
@@ -379,10 +390,12 @@ RunGPareto <- function(kmodels = NULL, method = "genoud", basedir = "tmp", ...){
                hard.generation.limit = FALSE)
   opt_pso <- c(method = "psoptim", fn = .kriging.mean, maxit = 20) # doesn't work, yet
   opt_list <- GPareto::GParetoptim(model = kmodels, fn = .kriging.mean.multi,
-                                   nsteps = 10,  lower = rep(minval, nvars),
+                                   nsteps = nsteps,
+                                   lower = rep(minval, nvars),
                                    upper = rep(maxval, nvars),
+                                   reinterpolation = TRUE,
                                    optimcontrol = opt_gen, ml = kmodels)
-  objname <- deparse(substitute(kmodels))
+  objname <- toupper(deparse(substitute(kmodels)))
   objname <- gsub("\\.", "_", objname)
   fn <- paste0(objname, "_opt.rds")
   basedir <- .CheckBasedir(basedir)
@@ -534,7 +547,7 @@ RunGPareto <- function(kmodels = NULL, method = "genoud", basedir = "tmp", ...){
   return(results)
 }
 #==============================================================================
-# supply a list of parameters and a column containg the parameters
+# supply a list of parameters and a column containing the parameters
 # function returns a filter to include all rows for the input list
 .List2Filt <- function(filt_list, filt_col){
   filt <- rep(FALSE, length(filt_col))
@@ -547,7 +560,7 @@ RunGPareto <- function(kmodels = NULL, method = "genoud", basedir = "tmp", ...){
 }
 # filt_list <- c("FIELD", "PRODU2")
 # filt_col <- member_error[,"WGNAME"]
-# test <- runOPM:::.List2Filt(filt_list, filt_col)
+# test <- .List2Filt(filt_list, filt_col)
 # sum(test)
 # [1] 50400
 #==============================================================================
@@ -575,7 +588,7 @@ RunGPareto <- function(kmodels = NULL, method = "genoud", basedir = "tmp", ...){
 # KEYWORD <- "WOPR"
 # ERRORTYPE <- "ABS_MEAN_FRAC_ERR"
 # wke <- c(WGNAME, KEYWORD, ERRORTYPE)
-# filt_wke <- runOPM:::.WKE2Filt(member_error, wke)
+# filt_wke <- .WKE2Filt(member_error, wke)
 # sum(filt_wke)
 # [1] 300
 #==============================================================================

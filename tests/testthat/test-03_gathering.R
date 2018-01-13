@@ -51,17 +51,23 @@ basedir <- normalizePath("testsim")
 infile <- .FindSummary(basedir, casename = "SPE1_CASE1")
 outfile <- file.path(basedir, "OUTPUT", case, paste0(case,".csv"))
 wide_raw <- .GetECL(case, infile, outfile)
-wr_wo_date <- wide_raw[,colnames(wide_raw) != "DATE" & colnames(wide_raw) != "DAYS"]
-summary(wr_wo_date)
-colsums_wide_raw <- as.matrix(t(colSums(wr_wo_date)))
-# calculated with gnumeric
-colsums_tsv <-  system.file("testdata", "SPE1_CASE1_ColSums.tsv", package = "runOPM")
-colsums_gnumeric <- read.delim(colsums_tsv)
-colsums_gnumeric <- as.matrix(colsums_gnumeric[,colnames(colsums_gnumeric) != "DATE"])
 #------------------------------------------------------------------------------
 test_that(".GetECL with the python dependency works", {
   expect_true(is.data.frame(wide_raw))
-  expect_equal(colsums_wide_raw, colsums_gnumeric)
+  # enough timesteps
+  expect_gte(nrow(wide_raw), 120)
+  # initial opr
+  expect_equal(wide_raw[1,"FOPR"], 20000)
+  # final oil cum within 1%
+  expect_lte(abs((wide_raw[nrow(wide_raw),"WOPT.PROD"] - 52282200)
+                 / 52282200), 0.01)
+  # final gas cum within 1%
+  expect_lte(abs((wide_raw[nrow(wide_raw),"WGPT.PROD"] - 339460000)
+                 / 339460000), 0.01)
+  # final water cum less than 1
+  expect_lte(wide_raw[nrow(wide_raw), "WWPT.PROD"], 1)
+  # final bhp at limiting constraint
+  expect_equal(wide_raw[nrow(wide_raw), "WBHP.PROD"], 1000)
 })
 #==============================================================================
 wide <- .CleanWide(case, wide_raw)
